@@ -67,7 +67,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) # adding INFO_ prefix to the row names
   
   # cleaning dataframes
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- convert_time_list (reads_from_stats) # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
+  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- ConvertTimeList (reads_from_stats) # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
   
   # adding prefixes
   reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1 <-
@@ -122,7 +122,7 @@ GetRsNreads <- function (reads_from_info) {
 }
 
 # converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
-convert_time_list <- function (reads_from_stats) {
+ConvertTimeList <- function (reads_from_stats) {
   
   col_memory_names <- 
     paste0(c("fastqInfo","iRAP-QC","iRAP-Mapping","iRAP-Quant","iRAP-Mapping-QC","iRAP-CRAM"), "_memory")
