@@ -23,7 +23,7 @@ if (length(args)!=3) {
 #MAIN FUNCTION#
 
 #generates QC profile of the given library (takes path to the directory and the library's index of character types)
-generate_QC_profile <- function (path_to_directory, index) {
+GenerateQCProfile <- function (path_to_directory, index) {
   
   #list with the types of files which may contain profiling data 
   types_of_files <- list(info = paste0(index, ".*.info"),
@@ -63,7 +63,7 @@ generate_QC_profile <- function (path_to_directory, index) {
   reads_from_stats <- lapply(files_paths_list[-grep("info", files_paths_list)], fread, header=FALSE)
   
   #getting the nreads and rs data from the info 
-  info_dataframe <- get_rs_and_nreads (reads_from_info)
+  info_dataframe <- GetRsNreads (reads_from_info)
   info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) #adding INFO_ prefix to the row names
   
   #cleaning dataframes
@@ -90,10 +90,10 @@ generate_QC_profile <- function (path_to_directory, index) {
   colnames(profile_dataframe) <- index
   
   #transposing profile dataframe
-  transposed_profile_dataframe <- transpose_with_names(profile_dataframe)
+  transposed_profile_dataframe <- TransposeWithNames(profile_dataframe)
   
   #cleaning dataframe (dropping non-important columns, if there are such)
-  transposed_profile_dataframe <- drop_unnecessary_columns(transposed_profile_dataframe)
+  transposed_profile_dataframe <- DropUnnecessaryColumns(transposed_profile_dataframe)
   
   return (transposed_profile_dataframe)
   
@@ -102,7 +102,7 @@ generate_QC_profile <- function (path_to_directory, index) {
 #SECONDARY FUNCTIONS#
 
 #gets rs and nreads from the list with data from .info, returns a dataframe with columns V1 and V2
-get_rs_and_nreads <- function (reads_from_info) {
+GetRsNreads <- function (reads_from_info) {
   
   sample <- str_split_fixed(reads_from_info$V1, "#", n=2)
   nreads <- strsplit(sample[grep("nreads", sample)], "=")
@@ -131,7 +131,7 @@ convert_time_list <- function (reads_from_stats) {
 }
 
 #transposes a dataframe while keeping the names and the variables types
-transpose_with_names <- function (data.frame) {
+TransposeWithNames <- function (data.frame) {
   rows <- rownames (data.frame)
   cols <- colnames (data.frame)
   
@@ -143,7 +143,7 @@ transpose_with_names <- function (data.frame) {
 }
 
 #deletes unnecessary columns
-drop_unnecessary_columns <- function (data_frame) {
+DropUnnecessaryColumns <- function (data_frame) {
   
   unnecessary_columns_list <- list ("source", "IG", "TR")
   
@@ -157,7 +157,7 @@ drop_unnecessary_columns <- function (data_frame) {
 }
 ###########################################################################
 
-profile <- generate_QC_profile(path_to_directory, index)
+profile <- GenerateQCProfile(path_to_directory, index)
 #write the output to a file
 write.table (cbind(rownames(profile), profile), file = output, sep ="\t", row.names = T, col.names = T)
 
