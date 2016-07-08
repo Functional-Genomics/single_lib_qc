@@ -1,13 +1,20 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-path_to_directory <- args[1] #path to the library (e.g. /.../SRR869/SRR869012/)
-index <- args[2] #index of the library (e.g. SRR869012)
+path_to_directory <- args[1] #path to folder (e.g. /.../SRR869/SRR869012/)
+index <- args[2] #prefix of the library's files (e.g. SRR869012)
 output <- args[3] #where to place the output (used in write.table)
 
 library(data.table)
 library(dplyr)
 library(stringr)
+
+if (length(args)!=3) {
+  cat("usage:  <path_to_folder> <filename_prefix> <output_file> \n")
+  cat("ERROR: incorrect amount of arguments\n");
+  q(status=1);
+}
+
 
 
 ###########################################################################
@@ -20,7 +27,8 @@ generate_QC_profile <- function (path_to_directory, index) {
   
   #list with the types of files which may contain profiling data 
   types_of_files <- list(info = paste0(index, ".*.info"),
-                         stats = paste0(index, ".*.stats"),
+                         stats = paste0(index, ".*.bam.stats"),
+                         gene.stats = paste0(index, ".*.gene.stats"),
                          stats.csv = paste0(index, ".*.stats.csv"), 
                          time = paste0(index,".*.time")) 
   
@@ -36,6 +44,19 @@ generate_QC_profile <- function (path_to_directory, index) {
   #creating compelete list with files paths
   files_paths_list <- paste0(path_to_directory, sep = "/", files_list)
   files_paths_list <- unique(files_paths_list) #getting rid of the duplicates (check for another way?)
+  
+  #IMPORTANT: checks for the library's integrity (there should be only 5 files)
+  if (length(files_paths_list)!=5){
+    cat(index, " ", "ERROR! incomplete library:")
+    for (type in types_of_files) {
+      if (length((grep(paste0(type, "($|\\s)"), files_paths_list))) == 0) {
+        cat(" ", type, "file missing")
+      }
+    }
+    cat("\n")
+    q(status=1)
+  }
+  
   
   #reading data from the file as a list of dataframes (specific, as there are always only 5 files that we need to check)
   reads_from_info <- read.table(files_paths_list[grep("info", files_paths_list)], comment.char = " ")
@@ -134,7 +155,10 @@ drop_unnecessary_columns <- function (data_frame) {
   return (data_frame)
   
 }
-##################################################################
+###########################################################################
 
 profile <- generate_QC_profile(path_to_directory, index)
-write.table (cbind(rownames(profile), profile), file = output, sep ='\t', row.names = FALSE)
+#write the output to a file
+write.table (cbind(rownames(profile), profile), file = output, sep ="\t", row.names = T, col.names = T)
+
+q(status=0)
