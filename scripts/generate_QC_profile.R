@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-path_to_directory <- args[1] #path to folder (e.g. /.../SRR869/SRR869012/)
-index <- args[2] #prefix of the library's files (e.g. SRR869012)
-output <- args[3] #where to place the output (used in write.table)
+path_to_directory <- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
+index <- args[2] # prefix of the library's files (e.g. SRR869012)
+output <- args[3] # where to place the output (used in write.table)
 
 library(data.table)
 library(dplyr)
-library(dtplyr) #seams dplyr and data.table packages
+library(dtplyr) # seams dplyr and data.table
 library(stringr)
 
 if (length(args)!=3) {
@@ -19,14 +19,14 @@ if (length(args)!=3) {
 
 
 
-#used functions----------------------------------------------------------------------------------------------------
+# used functions----------------------------------------------------------------------------------------------------
 
-#MAIN FUNCTION-----------------------------------------------------------------------------------------------------
+# MAIN FUNCTION-----------------------------------------------------------------------------------------------------
 
-#generates QC profile of the given library (takes path to the directory and the library's index of character types)
+# generates QC profile of the given library (takes path to the directory and the library's index of character types)
 GenerateQCProfile <- function (path_to_directory, index) {
   
-  #list with the types of files which may contain profiling data 
+  # list with the types of files which may contain profiling data 
   types_of_files <- list(info = paste0(index, ".*.info"),
                          stats = paste0(index, ".*.bam.stats"),
                          gene.stats = paste0(index, ".*.gene.stats"),
@@ -36,17 +36,17 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- list()
   files <- list()
   
-  #looking for files with the necessary data and making lists with the full paths to each file
+  # looking for files with the necessary data and making lists with the full paths to each file
   for (type in types_of_files) {
     temporary_list <- list.files(path_to_directory, pattern = type)
     files <- c(files, temporary_list)
   } 
   
-  #creating compelete list with files paths
+  # creating compelete list with files paths
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  #checks for the library's integrity (there should be only 5 files)
+  # checks for the library's integrity (there should be only 5 files)
   if (length(files_paths) != 5) {
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
@@ -59,20 +59,20 @@ GenerateQCProfile <- function (path_to_directory, index) {
   }
   
   
-  #reading data from the file as a list of dataframes (specific, as there are always only 5 files that we need to check)
+  # reading data from the file as a list of dataframes (specific, as there are always only 5 files that we need to check)
   reads_from_info <-
     read.table(files_paths[grep("info", files_paths)], comment.char = " ")
   reads_from_stats <-
     lapply(files_paths[-grep("info", files_paths)], fread, header = FALSE)
   
-  #getting the nreads and rs data from the info 
+  # getting the nreads and rs data from the info 
   info_dataframe <- GetRsNreads (reads_from_info)
-  info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) #adding INFO_ prefix to the row names
+  info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) # adding INFO_ prefix to the row names
   
-  #cleaning dataframes
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- convert_time_list (reads_from_stats) #converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
+  # cleaning dataframes
+  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- convert_time_list (reads_from_stats) # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
   
-  #adding prefixes
+  # adding prefixes
   reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1 <-
     paste0("GENE.STATS_",  reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1)
   reads_from_stats[[grep("gene", reads_from_stats)]]$V1 <-
@@ -82,39 +82,39 @@ GenerateQCProfile <- function (path_to_directory, index) {
   reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
     paste0("TIME_",  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1)
   
-  #converting list of the dataframes to a single dataframe
+  # converting list of the dataframes to a single dataframe
   stats_dataframe <- rbindlist(reads_from_stats)
   
-  #deleting underscores (just in case)
-  #stats_dataframe$V1 <- gsub('_', ' ', stats_dataframe$V1)
+  # deleting underscores (just in case)
+  # stats_dataframe$V1 <- gsub('_', ' ', stats_dataframe$V1)
   
-  #creating profile vector
+  # creating profile vector
   profile_vector <- bind_rows(info_dataframe, stats_dataframe)$V2
   names(profile_vector) <- bind_rows(info_dataframe, stats_dataframe)$V1
   
-  #creating profile dataframe
+  # creating profile dataframe
   profile_dataframe <- transform(profile_vector, as.numeric())
   colnames(profile_dataframe) <- index
   
-  #transposing profile dataframe
+  # transposing profile dataframe
   transposed_profile_dataframe <- TransposeWithNames(profile_dataframe)
   
-  #cleaning dataframe (dropping non-important columns, if there are such)
+  # cleaning dataframe (dropping non-important columns, if there are such)
   transposed_profile_dataframe <- DropUnnecessaryColumns(transposed_profile_dataframe)
   
   return (transposed_profile_dataframe)
   
 }
 
-#SECONDARY FUNCTIONS-----------------------------------------------------------------------------------
+# SECONDARY FUNCTIONS-----------------------------------------------------------------------------------
 
-#gets rs and nreads from the list with data from .info, returns a dataframe with columns V1 and V2
+# gets rs and nreads from the list with data from .info, returns a dataframe with columns V1 and V2
 GetRsNreads <- function (reads_from_info) {
   
   sample <- str_split_fixed(reads_from_info$V1, "#", n = 2)
   nreads <- strsplit(sample[grep("nreads", sample)], "=")
   
-  rs <-strsplit(sample[grep("rs", sample)], "=")[[2]] #TODO:think of a less specific way
+  rs <-strsplit(sample[grep("rs", sample)], "=")[[2]] # TODO: think of a less specific way
   rs_nreads_list <- c(nreads, rs)
   
   rs_nreads_dataframe <-
@@ -124,7 +124,7 @@ GetRsNreads <- function (reads_from_info) {
   return(rs_nreads_dataframe)
 }
 
-#converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
+# converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
 convert_time_list <- function (reads_from_stats) {
   
   col_memory_names <- 
@@ -141,7 +141,7 @@ convert_time_list <- function (reads_from_stats) {
   
 }
 
-#transposes a dataframe while keeping the names and the variables types
+# transposes a dataframe while keeping the names and the variables types
 TransposeWithNames <- function (data.frame) {
   rows <- rownames (data.frame)
   cols <- colnames (data.frame)
@@ -153,7 +153,7 @@ TransposeWithNames <- function (data.frame) {
   return(transposed_data_frame)
 }
 
-#deletes unnecessary columns
+# deletes unnecessary columns
 DropUnnecessaryColumns <- function (data_frame) {
   
   unnecessary_columns_list <- list ("source", "IG", "TR")
@@ -169,10 +169,10 @@ DropUnnecessaryColumns <- function (data_frame) {
 }
 #--------------------------------------------------------------------------------------------------------
 
-#executable code-----------------------------------------------------------------------------------------
+# Executable code-----------------------------------------------------------------------------------------
 
 profile <- GenerateQCProfile(path_to_directory, index)
-#write the output to a file
+# write the output to a file
 write.table (cbind(rownames(profile), profile), file = output, sep ="\t", row.names = T, col.names = T)
 
 q(status=0)
