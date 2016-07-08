@@ -5,8 +5,9 @@ path_to_directory <- args[1] #path to folder (e.g. /.../SRR869/SRR869012/)
 index <- args[2] #prefix of the library's files (e.g. SRR869012)
 output <- args[3] #where to place the output (used in write.table)
 
-library(data.table)
-library(dplyr)
+#library(data.table)
+#library(dplyr)
+library(dtplyr)
 library(stringr)
 
 if (length(args)!=3) {
