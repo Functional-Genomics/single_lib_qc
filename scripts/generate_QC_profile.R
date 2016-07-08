@@ -18,10 +18,10 @@ if (length(args)!=3) {
 
 
 
-###########################################################################
-#used functions#
 
-#MAIN FUNCTION#
+#used functions----------------------------------------------------------------------------------------------------
+
+#MAIN FUNCTION-----------------------------------------------------------------------------------------------------
 
 #generates QC profile of the given library (takes path to the directory and the library's index of character types)
 GenerateQCProfile <- function (path_to_directory, index) {
@@ -46,7 +46,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  #IMPORTANT: checks for the library's integrity (there should be only 5 files)
+  #checks for the library's integrity (there should be only 5 files)
   if (length(files_paths) != 5) {
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
@@ -106,7 +106,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   
 }
 
-#SECONDARY FUNCTIONS#
+#SECONDARY FUNCTIONS-----------------------------------------------------------------------------------
 
 #gets rs and nreads from the list with data from .info, returns a dataframe with columns V1 and V2
 GetRsNreads <- function (reads_from_info) {
@@ -167,7 +167,9 @@ DropUnnecessaryColumns <- function (data_frame) {
   return (data_frame)
   
 }
-###########################################################################
+#--------------------------------------------------------------------------------------------------------
+
+#executable code-----------------------------------------------------------------------------------------
 
 profile <- GenerateQCProfile(path_to_directory, index)
 #write the output to a file
