@@ -33,24 +33,24 @@ GenerateQCProfile <- function (path_to_directory, index) {
                          stats.csv = paste0(index, ".*.stats.csv"), 
                          time = paste0(index,".*.time")) 
   
-  files_paths_list <- list()
-  files_list <- list()
+  files_paths <- list()
+  files <- list()
   
   #looking for files with the necessary data and making lists with the full paths to each file
   for (type in types_of_files) {
     temporary_list <- list.files(path_to_directory, pattern = type)
-    files_list <- c(files_list, temporary_list)
+    files <- c(files, temporary_list)
   } 
   
   #creating compelete list with files paths
-  files_paths_list <- paste0(path_to_directory, sep = "/", files_list)
-  files_paths_list <- unique(files_paths_list) #getting rid of the duplicates (check for another way?)
+  files_paths <- paste0(path_to_directory, sep = "/", files)
+  files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
   #IMPORTANT: checks for the library's integrity (there should be only 5 files)
-  if (length(files_paths_list)!=5){
+  if (length(files_paths)!=5){
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
-      if (length((grep(paste0(type, "($|\\s)"), files_paths_list))) == 0) {
+      if (length((grep(paste0(type, "($|\\s)"), files_paths))) == 0) {
         cat(" ", type, "file missing")
       }
     }
@@ -60,8 +60,8 @@ GenerateQCProfile <- function (path_to_directory, index) {
   
   
   #reading data from the file as a list of dataframes (specific, as there are always only 5 files that we need to check)
-  reads_from_info <- read.table(files_paths_list[grep("info", files_paths_list)], comment.char = " ")
-  reads_from_stats <- lapply(files_paths_list[-grep("info", files_paths_list)], fread, header=FALSE)
+  reads_from_info <- read.table(files_paths[grep("info", files_paths)], comment.char = " ")
+  reads_from_stats <- lapply(files_paths[-grep("info", files_paths)], fread, header=FALSE)
   
   #getting the nreads and rs data from the info 
   info_dataframe <- GetRsNreads (reads_from_info)
