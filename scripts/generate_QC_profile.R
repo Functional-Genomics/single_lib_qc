@@ -170,6 +170,6 @@ DropUnnecessaryColumns <- function (data_frame) {
 
 profile <- GenerateQCProfile(path_to_directory, index)
 # write the output to a file
-write.table (cbind(rownames(profile), profile), file = output, sep ="\t", row.names = T, col.names = T)
+write.table (profile, file = output, sep ="\t", row.names = T, col.names = NA)
 
 q(status=0)
