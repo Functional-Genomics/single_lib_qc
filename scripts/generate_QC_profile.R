@@ -7,7 +7,7 @@ output <- args[3] #where to place the output (used in write.table)
 
 library(data.table)
 library(dplyr)
-#library(dtplyr)
+library(dtplyr) #seams dplyr and data.table packages
 library(stringr)
 
 if (length(args)!=3) {
