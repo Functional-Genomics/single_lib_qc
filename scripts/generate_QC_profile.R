@@ -5,9 +5,9 @@ path_to_directory <- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
 index <- args[2] # prefix of the library's files (e.g. SRR869012)
 output <- args[3] # where to place the output (used in write.table)
 
+library(dtplyr) # seams dplyr and data.table
 library(data.table)
 library(dplyr)
-library(dtplyr) # seams dplyr and data.table
 library(stringr)
 
 if (length(args)!=3) {
@@ -124,8 +124,9 @@ GetRsNreads <- function (reads_from_info) {
 # converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
 ConvertTimeList <- function (reads_from_stats) {
   
-  col_memory_names <- 
-    paste0(c("fastqInfo","iRAP-QC","iRAP-Mapping","iRAP-Quant","iRAP-Mapping-QC","iRAP-CRAM"), "_memory")
+  names <- reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1
+  
+  col_memory_names <- paste0(names, "_memory")
   col_memory_values <- reads_from_stats[[grep("iRAP", reads_from_stats)]]$V4
   
   memory_dataframe <- data.frame (col_memory_names, col_memory_values)
@@ -169,7 +170,7 @@ DropUnnecessaryColumns <- function (data_frame) {
 # Executable code-----------------------------------------------------------------------------------------
 
 profile <- GenerateQCProfile(path_to_directory, index)
-# write the output to a file
+# writes the output to a file
 write.table (profile, file = output, sep ="\t", row.names = T, col.names = NA)
 
 q(status=0)
