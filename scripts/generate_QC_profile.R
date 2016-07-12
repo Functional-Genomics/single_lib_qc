@@ -6,8 +6,8 @@ index <- args[2] # prefix of the library's files (e.g. SRR869012)
 output <- args[3] # where to place the output (used in write.table)
 
 library(dtplyr) # seams dplyr and data.table
-library(data.table)
-library(dplyr)
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(dplyr))
 library(stringr)
 
 if (length(args)!=3) {
@@ -72,8 +72,8 @@ GenerateQCProfile <- function (path_to_directory, index) {
   # adding prefixes
   reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1 <-
     paste0("GENE.STATS_",  reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1)
-  reads_from_stats[[grep("gene", reads_from_stats)]]$V1 <-
-    paste0("STATS_",  reads_from_stats[[grep("gene", reads_from_stats)]]$V1)
+  reads_from_stats[[grep("source", reads_from_stats)]]$V1 <-
+    paste0("STATS_",  reads_from_stats[[grep("source", reads_from_stats)]]$V1)
   reads_from_stats[[grep("entries", reads_from_stats)]]$V1 <-
     paste0("STATS.CSV_",  reads_from_stats[[grep("entries", reads_from_stats)]]$V1)
   reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
