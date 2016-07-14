@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+top_folder=$1 #directory, where to look for profiles
+output_folder=$2 #directory, where to output the list of profiles and the matrix
+temporary_storage=$3 #directory, where to store all the temporary data
+
+echo "Creating profiles of each library..."
+if [ ! -d $temporary_storage/profiles ]; then 
+	mkdir -p $output_folder/$general_prefix
+fi
+find $top_folder -name "*.time" -exec wrap_gen_QC_profile.sh {} $temporary_storage/profiles \;
+
+echo "Creating list with profiles paths..."
+touch $temporary_storage/profiles_paths
+find_profiles_paths.sh $temporary_storage/profiles $temporary_storage/profiles_paths
+
+echo "Generating the matrix..."
+touch $output_folder/profiles_matrix
+generate_profiles_matrix.R $temporary_storage/profiles_paths $output_folder/profiles_matrix
+
+exit
+

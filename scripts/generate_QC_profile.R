@@ -79,11 +79,12 @@ GenerateQCProfile <- function (path_to_directory, index) {
   reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
     paste0("TIME_",  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1)
   
+  #deleting duplicates from part with time and memory values
+  reads_from_stats[[grep("iRAP", reads_from_stats)]] <-
+    DeleteDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
+  
   # converting list of the dataframes to a single dataframe
   stats_dataframe <- rbindlist(reads_from_stats)
-  
-  # deleting underscores (just in case)
-  # stats_dataframe$V1 <- gsub('_', ' ', stats_dataframe$V1)
   
   # creating profile vector
   profile_vector <- bind_rows(info_dataframe, stats_dataframe)$V2
@@ -137,6 +138,24 @@ ConvertTimeList <- function (reads_from_stats) {
   
   return(bind_rows(reads_from_stats[[grep("iRAP", reads_from_stats)]], memory_dataframe))
   
+}
+
+#deletes duplicates in the time and memory list and adds "sum" column
+DeleteDuplicates <- function (df) {
+  var_names <- unique(df$V1)
+  new_df <- data_frame()
+  for (name in var_names) {
+    
+    part <- subset(df, df$V1 == name)
+    
+    last <- part[length(part$V2)]
+    summ <- aggregate(V2~V1, data = part, FUN = sum) 
+    summ$V1 <- paste0(summ$V1, "_sum")
+    
+    new_df <- bind_rows(new_df, last, summ)
+    
+  }
+  return(new_df)
 }
 
 # transposes a dataframe while keeping the names and the variables types
