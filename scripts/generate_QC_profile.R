@@ -23,11 +23,14 @@ if (length(args)!=3) {
 # generates QC profile of the given library (takes path to the directory and the library's index of character types)
 GenerateQCProfile <- function (path_to_directory, index) {
   
-  # list with the types of files which may contain profiling data 
+  # list with the mandatory types of files which contain profiling data 
   types_of_files <- list(info = paste0(index, ".*.info"),
+                         fastqc.tsv_1 = paste0(index, "_1.*.fastqc.tsv|.*.fastqc.tsv"),
+                         fastqc.tsv_2 = paste0(index, "_2.*.fastqc.tsv"),
                          stats = paste0(index, ".*.bam.stats"),
                          gene.stats = paste0(index, ".*.gene.stats"),
-                         stats.csv = paste0(index, ".*.stats.csv"), 
+                         stats.csv = paste0(index, ".*.stats.csv"),
+                         genes.raw.csv = paste0(index, ".*.genes.raw.*.tsv"),
                          time = paste0(index,".*.time")) 
   
   files_paths <- list()
@@ -43,8 +46,17 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
+  #checking if the .fastqc.tsv file is present
+  if (length(grep("fastqc.tsv", files_paths)) == 0) { 
+    amount_of_files <- (length(types_of_files) - 2)
+  } else if (length(grep("fastqc.tsv", files_paths)) == 1) { 
+    amount_of_files <- (length(types_of_files) - 1) 
+  } else {
+    amount_of_files <- length(types_of_files) 
+  }
+  
   # checks for the library's integrity (there should be only 5 files)
-  if (length(files_paths) != 5) {
+  if (length(files_paths) != amount_of_files) {
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
       if (length((grep(paste0(type, "($|\\s)"), files_paths))) == 0) {
@@ -55,19 +67,26 @@ GenerateQCProfile <- function (path_to_directory, index) {
     q(status = 1)
   }
   
-  
-  # reading data from the file as a list of dataframes (specific, as there are always only 5 files that we need to check)
+  # reading data from the file as a list of dataframes 
   reads_from_info <-
     read.table(files_paths[grep("info", files_paths)], comment.char = " ")
   reads_from_stats <-
     lapply(files_paths[-grep("info", files_paths)], fread, header = FALSE)
   
+  #summing up the data from .genes.raw.tsv
+  genes_raw_pos <- grep("genes.raw", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
+  reads_from_stats[[genes_raw_pos]]$V2 <- 
+    sum(reads_from_stats[[genes_raw_pos]]$V2)
+  reads_from_stats[[genes_raw_pos]]$V1 <- "GENES.RAW.TSV_sum"
+  reads_from_stats[[genes_raw_pos]] <- 
+    unique(reads_from_stats[[genes_raw_pos]])
+  
   # getting the nreads and rs data from the info 
   info_dataframe <- GetRsNreads (reads_from_info)
   info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) # adding INFO_ prefix to the row names
   
-  # cleaning dataframes
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- ConvertTimeList (reads_from_stats) # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
+  # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
+  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- ConvertTimeList (reads_from_stats) 
   
   # adding prefixes
   reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1 <-
@@ -78,10 +97,18 @@ GenerateQCProfile <- function (path_to_directory, index) {
     paste0("STATS.CSV_",  reads_from_stats[[grep("entries", reads_from_stats)]]$V1)
   reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
     paste0("TIME_",  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1)
+  #if the data from .fastqc.tsv is present, add prefixes to it, too
+  if (length(grep("fastqc.tsv", files_paths)) != 0) {
+    for (position in grep("FASTQC", reads_from_stats)) {
+      appendix <- paste0("fastqc.tsv_", position,"_")
+      reads_from_stats[[position]]$V1 <-
+        paste0(appendix,  reads_from_stats[[position]]$V1)
+    }
+  }
   
   #deleting duplicates from part with time and memory values
   reads_from_stats[[grep("iRAP", reads_from_stats)]] <-
-    DeleteDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
+    DeleteTMDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
   
   # converting list of the dataframes to a single dataframe
   stats_dataframe <- rbindlist(reads_from_stats)
@@ -133,7 +160,7 @@ ConvertTimeList <- function (reads_from_stats) {
   memory_dataframe <- data.frame (col_memory_names, col_memory_values)
   colnames(memory_dataframe) <- c("V1", "V2")
   
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- subset(reads_from_stats[[4]], select = c(V1,V3))
+  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- subset(reads_from_stats[[grep("iRAP", reads_from_stats)]], select = c(V1,V3))
   colnames(reads_from_stats[[grep("iRAP", reads_from_stats)]]) <- c("V1", "V2")
   
   return(bind_rows(reads_from_stats[[grep("iRAP", reads_from_stats)]], memory_dataframe))
@@ -141,7 +168,7 @@ ConvertTimeList <- function (reads_from_stats) {
 }
 
 #deletes duplicates in the time and memory list and adds "sum" column
-DeleteDuplicates <- function (df) {
+DeleteTMDuplicates <- function (df) {
   var_names <- unique(df$V1)
   new_df <- data_frame()
   for (name in var_names) {
@@ -173,7 +200,11 @@ TransposeWithNames <- function (data.frame) {
 # deletes unnecessary columns
 DropUnnecessaryColumns <- function (data_frame) {
   
-  unnecessary_columns_list <- list ("source", "IG", "TR")
+  unnecessary_columns_list <- list ("source", "IG", "TR", "3prime_overlapping_ncrna", "insdc", 
+                                    "macro_lncRNA", "mirbase", "misc_RNA", "non_stop_decay", "nonsense_mediated_decay",
+                                    "polymorphic_pseudogene", "ribozyme", "sense_intronic", "sense_overlapping",
+                                    "Mt_rRNA", "Mt_tRNA", "transcribed_unitary_pseudogene", "vaultRNA", "FlyBase", 
+                                    "pre_miRNA", "WormBase", "FASTQC")
   
   for (name in unnecessary_columns_list) {
     if (length(grep(name, colnames(data_frame))) != 0)

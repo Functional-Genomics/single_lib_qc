@@ -37,7 +37,7 @@ GenerateProfilesMatrix <- function (profiles_paths) {
 # Executable code----------------------------------------------------------------------------------------------------
 
 profiles_matrix <- GenerateProfilesMatrix (profiles_paths)
-rownames(profiles_matrix)<-profiles_matrix$Prefix #assigning prefixes as row names
+rownames(profiles_matrix) <- profiles_matrix$Prefix #assigning prefixes as row names
 profiles_matrix <- profiles_matrix[ , !(colnames(profiles_matrix) %in% "Prefix")] #dropping "prefix" column
 write.table (profiles_matrix, file = output, sep ="\t", row.names = T, col.names = NA)
 
