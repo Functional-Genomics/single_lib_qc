@@ -2,7 +2,7 @@
 
 set -e
 
-top_folder=$1 #directory, where to look for profiles
+top_folder=$1 #directory, where to look for libraries
 output_folder=$2 #directory, where to output the matrix
 temporary_storage=$3 #directory, where to store all the temporary data
 
