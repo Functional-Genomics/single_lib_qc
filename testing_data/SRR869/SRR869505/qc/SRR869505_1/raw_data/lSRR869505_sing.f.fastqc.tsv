@@ -1,0 +1,14 @@
+FASTQC	lSRR869505_sing.f
+Basic Statistics	PASS
+Per base sequence quality	PASS
+Per tile sequence quality	PASS
+Per sequence quality scores	PASS
+Per base sequence content	WARN
+Per sequence GC content	WARN
+Per base N content	PASS
+Sequence Length Distribution	PASS
+Sequence Duplication Levels	WARN
+Overrepresented sequences	WARN
+Adapter Content	PASS
+Kmer Content	FAIL
+Total Sequences	3758145

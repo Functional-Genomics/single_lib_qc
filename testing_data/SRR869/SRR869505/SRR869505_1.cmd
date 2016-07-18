@@ -1,0 +1,1 @@
+irap_single_lib -A -f -1 raw_data/SRR869/SRR869505/SRR869505_1.fastq.gz -2 raw_data/SRR869/SRR869505/SRR869505_2.fastq.gz -c /nfs/production3/ma/home/irap_prod/single_lib/configs//ascaris_suum.conf -s both -m 32768 -t 8 -C

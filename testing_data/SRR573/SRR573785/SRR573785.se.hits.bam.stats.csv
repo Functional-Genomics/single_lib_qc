@@ -1,0 +1,29 @@
+All_entries,20604795
+Valid_entries,20604795
+Duplicate,0
+Alignments,20327486
+Spliced,2820764
+ReadsSpliced,2707084
+Paired,0
+Paired_mapped,0
+Paired_mapped_mate1,0
+Paired_mapped_mate2,0
+ReadsUnmapped,277309
+ReadsMapped,16867170
+  NM0,17866203
+  NM1,2177751
+  NM2,283532
+NMGE3,0
+plus_strand,9659315
+minus_strand,9296667
+UniquelyMappedReads,15444349
+MultimapReads,1422821
+  NH1,15444349
+NHGE2,1422821
+NHGE10,54179
+NHGE20,0
+Spliced1,2805745
+Spliced2,14920
+Spliced3,99
+SplicedGE4,0
+ MAPQ,38.2726180699374

@@ -1,0 +1,1 @@
+irap_single_lib -f -1 raw_data/SRR869/SRR869087/SRR869087_1.fastq.gz -2 raw_data/SRR869/SRR869087/SRR869087_2.fastq.gz -c /nfs/ma/home/irap_prod/single_lib/configs/rattus_norvegicus.conf -s both -m 32768 -t 8 -C

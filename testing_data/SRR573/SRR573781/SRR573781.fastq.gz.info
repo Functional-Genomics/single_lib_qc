@@ -1,0 +1,12 @@
+#nreads=12948972 
+lSRR573781=SRR573781.fastq.gz
+lSRR573781_dir=13/SRR573781
+#rs=50 50
+lSRR573781_rs=50
+#range: 66 105
+lSRR573781_qual=64
+lSRR573781_strand=both
+se=lSRR573781
+lSRR573781_strand=both
+lSRR573781_rgid=
+lSRR573781_shl=@CO\tiRAP:0.1d\n@CO\tid:SRR573781\n@CO\tAnalysis performed by http://www.ebi.ac.uk/about/people/robert-petryszak team at EMBL-EBI

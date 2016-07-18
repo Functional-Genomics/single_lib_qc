@@ -1,0 +1,1 @@
+irap_single_lib -f -1 raw_data/SRR052/SRR052658/SRR052658.fastq.gz -c /nfs/ma/home/irap_prod/single_lib/configs/homo_sapiens.conf -s both -m 32768 -t 8 -C
