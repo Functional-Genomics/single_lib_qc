@@ -46,7 +46,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  #checking if the .fastqc.tsv file is present
+  # checking if the .fastqc.tsv file is present
   if (length(grep("fastqc.tsv", files_paths)) == 0) { 
     amount_of_files <- (length(types_of_files) - 2)
   } else if (length(grep("fastqc.tsv", files_paths)) == 1) { 
@@ -73,7 +73,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   reads_from_stats <-
     lapply(files_paths[-grep("info", files_paths)], fread, header = FALSE)
   
-  #summing up the data from .genes.raw.tsv
+  # summing up the data from .genes.raw.tsv
   genes_raw_pos <- grep("genes.raw", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
   reads_from_stats[[genes_raw_pos]]$V2 <- 
     sum(reads_from_stats[[genes_raw_pos]]$V2)
@@ -97,7 +97,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
     paste0("STATS.CSV_",  reads_from_stats[[grep("entries", reads_from_stats)]]$V1)
   reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
     paste0("TIME_",  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1)
-  #if the data from .fastqc.tsv is present, add prefixes to it, too
+  # if the data from .fastqc.tsv is present, add prefixes to it, too
   if (length(grep("fastqc.tsv", files_paths)) != 0) {
     for (position in grep("FASTQC", reads_from_stats)) {
       appendix <- paste0("fastqc.tsv_", position,"_")
@@ -106,7 +106,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
     }
   }
   
-  #deleting duplicates from part with time and memory values
+  # deleting duplicates from part with time and memory values
   reads_from_stats[[grep("iRAP", reads_from_stats)]] <-
     DeleteTMDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
   
@@ -167,7 +167,7 @@ ConvertTimeList <- function (reads_from_stats) {
   
 }
 
-#deletes duplicates in the time and memory list and adds "sum" column
+# deletes duplicates in the time and memory list and adds "sum" column
 DeleteTMDuplicates <- function (df) {
   var_names <- unique(df$V1)
   new_df <- data_frame()

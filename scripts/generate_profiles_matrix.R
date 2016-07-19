@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-profiles_paths <- args[1] #file, list of paths to profiles
+profiles_paths <- args[1] # file, list of paths to profiles
 output <- args[2] #file, where to write the profiles matrix/dataframe
 
 library(dtplyr) # seams dplyr and data.table
@@ -16,7 +16,7 @@ if (length(args)!=2) {
 
 # used functions----------------------------------------------------------------------------------------------------
 
-#generates matrix of all profiles, which paths are passed as a list
+# generates matrix of all profiles, which paths are passed as a list
 GenerateProfilesMatrix <- function (profiles_paths) {
   
   paths_list <- fread(profiles_paths, header = F, col.names = "Path")
