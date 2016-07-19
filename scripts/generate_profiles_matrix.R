@@ -21,7 +21,7 @@ GenerateProfilesMatrix <- function (profiles_paths) {
   
   paths_list <- fread(profiles_paths, header = F, col.names = "Path")
   
-  profiles_dataframe <- data.frame()
+  profiles_dataframe <- data.table()
   
   for (path in paths_list$Path) {
     profile <- fread (path)
@@ -34,11 +34,11 @@ GenerateProfilesMatrix <- function (profiles_paths) {
   
 }
 
-# Executable code----------------------------------------------------------------------------------------------------
+# executable code----------------------------------------------------------------------------------------------------
 
 profiles_matrix <- GenerateProfilesMatrix (profiles_paths)
 rownames(profiles_matrix) <- profiles_matrix$Prefix #assigning prefixes as row names
-profiles_matrix <- profiles_matrix[ , !(colnames(profiles_matrix) %in% "Prefix")] #dropping "prefix" column
+profiles_matrix[, Prefix:=NULL] #dropping "prefix" column
 write.table (profiles_matrix, file = output, sep ="\t", row.names = T, col.names = NA)
 
 q(status=0)

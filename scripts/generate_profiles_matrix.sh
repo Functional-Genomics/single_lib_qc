@@ -3,7 +3,7 @@
 set -e
 
 top_folder=$1 #directory, where to look for libraries
-output_folder=$2 #directory, where to output the matrix
+output_folder=$2 #directory, where to output the matrixes
 temporary_storage=$3 #directory, where to store all the temporary data
 
 echo "Creating profiles of each library..."
@@ -19,6 +19,11 @@ find_profiles_paths.sh $temporary_storage/profiles $temporary_storage/profiles_p
 echo "Generating the matrix..."
 touch $output_folder/profiles_matrix
 generate_profiles_matrix.R $temporary_storage/profiles_paths $output_folder/profiles_matrix
+
+echo "Appending data from REST API..."
+append_REST_data.sh $output_folder/profiles_matrix $output_folder
+
+echo "Done"
 
 exit
 

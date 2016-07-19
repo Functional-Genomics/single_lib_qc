@@ -11,7 +11,7 @@ library_path=`dirname $info_path`
 general_path=`dirname $library_path`
 general_prefix=`basename $general_path`
 
-output=$output_folder/$general_prefix/$prefix #assuming that you have a link named "storage" from your home (~) directory
+output=$output_folder/$general_prefix/$prefix 
 
 #echo "info_path" $info_path
 #echo "info_file" $info_file
