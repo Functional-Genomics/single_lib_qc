@@ -29,7 +29,7 @@ AppendRESTData <- function (matrix) {
   
   for (prefix in prefix_list) {
     
-    add_row <- fromJSON(paste0("http://www.ebi.ac.uk/fg/rnaseq/api/json/70/getRun/", prefix))
+    add_row <- fromJSON(paste0("http://www.ebi.ac.uk/fg/rnaseq/api/json/0/getRun/", prefix))
     if (length(add_row) == 0) {
       add_row <- data.table(STUDY_ID = NA,
                             ORGANISM = NA,
