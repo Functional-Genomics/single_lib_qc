@@ -54,6 +54,6 @@ AppendRESTData <- function (matrix) {
 matrix <- fread(path_to_matrix, na.strings = c("","NA")) #reading matrix and filling blank spaces with NA
 colnames(matrix)[1] <- "Prefix"
 extended_matrix <- AppendRESTData (matrix)
-write.table(extended_matrix, file = output_matrix, sep ="\t", row.names = T, col.names = NA)
+write.table(extended_matrix, file = output_matrix, sep ="\t", row.names = F, col.names = T, quote = F)
 write.table(missing_data, file = output_missing, quote = F, row.names = F, col.names = F)
 
