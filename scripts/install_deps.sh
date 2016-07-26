@@ -4,7 +4,7 @@
 R --no-save <<EOF
 source("http://bioconductor.org/biocLite.R")
 
-for (p in c("dplyr", "data.table", "dtplyr", "stringr", "curl", "jsonlite") ) {
+for (p in c("dplyr", "data.table", "dtplyr", "stringr", "curl", "jsonlite", "shiny", "rsconnect", "shinyapps", "ggplot2", "reshape2", "plotly") ) {
    biocLite(p)
 }
 EOF
