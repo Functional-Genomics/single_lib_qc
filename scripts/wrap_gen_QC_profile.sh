@@ -9,7 +9,8 @@ info_file=`basename $info_path`
 prefix=$(echo $info_file | sed "s/_[0-9]*\..*\.info//;s/\..*\.info//")
 library_path=`dirname $info_path`
 general_path=`dirname $library_path`
-general_prefix=`basename $general_path`
+prefix_letters=`echo $prefix | sed "s/[0-9].*//"`
+general_prefix=`echo $general_path | sed "s/.*$prefix_letters/$prefix_letters/"`
 
 output=$output_folder/$general_prefix/$prefix
 

@@ -46,7 +46,13 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  # checking if the .fastqc.tsv file is present
+  # checking in the .fastqc.tsv files contain any info
+  for (file in files_paths) {
+   if (file.info(file)$size <= 1 || is.na(file.info(file)$size) == T) 
+     files_paths <- files_paths[-grep(file, files_paths)]
+  }
+  
+  # what to do if the .fastqc.tsv file is present
   if (length(grep("fastqc.tsv", files_paths)) == 0) { 
     amount_of_files <- (length(types_of_files) - 2)
   } else if (length(grep("fastqc.tsv", files_paths)) == 1) { 
@@ -55,12 +61,14 @@ GenerateQCProfile <- function (path_to_directory, index) {
     amount_of_files <- length(types_of_files) 
   }
   
-  # checks for the library's integrity (there should always be some specific files)
+  # checks for the library's integrity (some files are essential)
+  types_of_files["fastqc.tsv_1"] <- NULL #leaving only essential files
+  types_of_files["fastqc.tsv_2"] <- NULL #leaving only essential files
   if (length(files_paths) != amount_of_files) {
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
       if (length((grep(paste0(type, "($|\\s)"), files_paths))) == 0) {
-        cat(" ", type, "file missing")
+        cat(" ", type, "file missing/empty")
       }
     }
     cat("\n")
