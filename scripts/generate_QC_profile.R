@@ -55,7 +55,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
     amount_of_files <- length(types_of_files) 
   }
   
-  # checks for the library's integrity (there should be only 5 files)
+  # checks for the library's integrity (there should always be some specific files)
   if (length(files_paths) != amount_of_files) {
     cat(index, " ", "ERROR! incomplete library:")
     for (type in types_of_files) {
@@ -67,11 +67,21 @@ GenerateQCProfile <- function (path_to_directory, index) {
     q(status = 1)
   }
   
-  # reading data from the file as a list of dataframes 
+  # reading data from the files as a list of dataframes 
   reads_from_info <-
     read.table(files_paths[grep("info", files_paths)], comment.char = " ")
   reads_from_stats <-
-    lapply(files_paths[-grep("info", files_paths)], fread, header = FALSE)
+    lapply(files_paths[-c(grep("info", files_paths), grep("time", files_paths))], fread, header = F)
+  # reading from the .time file
+  time_path <- files_paths[grep("time", files_paths)]
+  ncols <- max(count.fields(time_path))
+  reads_from_time <- read.table(time_path, header = F, 
+                                col.names = paste0("V", 1:ncols), fill = T)[1:4]
+  
+  # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
+  reads_from_time <- ConvertTimeList (reads_from_time)
+  # addind time df to stats df
+  reads_from_stats <- append(reads_from_stats, list(reads_from_time))
   
   # summing up the data from .genes.raw.tsv
   genes_raw_pos <- grep("genes.raw", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
@@ -84,9 +94,6 @@ GenerateQCProfile <- function (path_to_directory, index) {
   # getting the nreads and rs data from the info 
   info_dataframe <- GetRsNreads (reads_from_info)
   info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) # adding INFO_ prefix to the row names
-  
-  # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- ConvertTimeList (reads_from_stats) 
   
   # adding prefixes
   reads_from_stats[[grep("Exons|Introns", reads_from_stats)]]$V1 <-
@@ -143,27 +150,31 @@ GetRsNreads <- function (reads_from_info) {
   rs_nreads_list <- c(nreads, rs)
   
   rs_nreads_dataframe <-
-    data.frame(matrix(unlist(rs_nreads_list), nrow = 2, byrow = T), stringsAsFactors =FALSE)
+    data.frame(matrix(unlist(rs_nreads_list), nrow = 2, byrow = T), stringsAsFactors = F)
   colnames(rs_nreads_dataframe) = c("V1", "V2")
   
   return(rs_nreads_dataframe)
 }
 
 # converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
-ConvertTimeList <- function (reads_from_stats) {
+ConvertTimeList <- function (reads_from_time) {
   
-  names <- reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1
+  names <- reads_from_time$V1
   
   col_memory_names <- paste0(names, "_memory")
-  col_memory_values <- reads_from_stats[[grep("iRAP", reads_from_stats)]]$V4
+  col_memory_values <- reads_from_time$V4
   
   memory_dataframe <- data.frame (col_memory_names, col_memory_values)
   colnames(memory_dataframe) <- c("V1", "V2")
   
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <- subset(reads_from_stats[[grep("iRAP", reads_from_stats)]], select = c(V1,V3))
-  colnames(reads_from_stats[[grep("iRAP", reads_from_stats)]]) <- c("V1", "V2")
+  reads_from_time <- subset(reads_from_time, select = c(V1,V3))
+  colnames(reads_from_time) <- c("V1", "V2")
   
-  return(bind_rows(reads_from_stats[[grep("iRAP", reads_from_stats)]], memory_dataframe))
+  memory_dataframe$V2 <- as.double(memory_dataframe$V2)
+  reads_from_time <- rbind(reads_from_time, memory_dataframe)
+  reads_from_time$V1 <- as.character(reads_from_time$V1)
+  
+  return(reads_from_time)
   
 }
 
@@ -175,7 +186,7 @@ DeleteTMDuplicates <- function (df) {
     
     part <- subset(df, df$V1 == name)
     
-    last <- part[length(part$V2)]
+    last <- part[length(part$V2), ]
     summ <- aggregate(V2~V1, data = part, FUN = sum) 
     summ$V1 <- paste0(summ$V1, "_sum")
     
