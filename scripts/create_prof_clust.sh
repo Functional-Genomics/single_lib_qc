@@ -6,7 +6,11 @@ libraries_storage=$1 # where to look for directories with libraries
 profiles_storage=$2 # where to put profiles
 pattern=$3 # what directories to look for
 
-L=`ls --color=never -d $libraries_storage/$pattern/`
+if [ $pattern -eq '']; then
+  L=`ls --color=never -d $libraries_storage/`
+else
+  =`ls --color=never -d $libraries_storage/$pattern/`
+fi
 
 for dir in $L
 do
