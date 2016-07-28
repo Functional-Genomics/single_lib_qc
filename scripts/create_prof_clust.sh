@@ -10,7 +10,7 @@ L=`ls -d $libraries_storage/$pattern/`
 
 for dir in $L
 do
-  bsub gen_QC_profile_single.sh -o $profiles_storage/stdoutput -e $profiles_storage/stderror $dir $profiles_storage
+  bsub -o $profiles_storage/stdoutput -e $profiles_storage/stderror gen_QC_profile_single.sh $dir $profiles_storage
 done
 
 exit
