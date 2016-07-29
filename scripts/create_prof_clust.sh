@@ -9,7 +9,7 @@ pattern=$3 # what directories to look for
 if [ $pattern -eq '']; then
   L=`ls --color=never -d $libraries_storage/`
 else
-  =`ls --color=never -d $libraries_storage/$pattern/`
+  L=`ls --color=never -d $libraries_storage/$pattern/`
 fi
 
 for dir in $L
