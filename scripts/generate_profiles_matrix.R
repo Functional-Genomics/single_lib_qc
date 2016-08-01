@@ -22,10 +22,15 @@ GenerateProfilesMatrix <- function (profiles_paths) {
   paths_list <- fread(profiles_paths, header = F, col.names = "Path")
   
   profiles_dataframe <- data.table()
+  counter <- 0
   
   for (path in paths_list$Path) {
     profile <- fread (path)
     profiles_dataframe <- bind_rows(profiles_dataframe, profile)
+    counter <- counter + 1
+    
+    if (counter %% 100 == 0)
+      cat(counter)
   } 
   
   colnames(profiles_dataframe)[1] <- "Prefix"
