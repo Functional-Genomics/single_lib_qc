@@ -6,18 +6,22 @@ info_path=$1
 output_folder=$2
 
 info_file=`basename $info_path`
+echo "info_file is" $info_file
 prefix=$(echo $info_file | sed "s/_[0-9]*\..*\.info//;s/\..*\.info//")
+echo "prefix is" $prefix
 library_path=`dirname $info_path`
+echo "library_path is" $library_path
 general_path=`dirname $library_path`
+echo "general_path is" $general_path
 prefix_letters=`echo $prefix | sed "s/[0-9].*//"`
 general_prefix=`echo $general_path | sed "s/.*$prefix_letters/$prefix_letters/"`
+echo "general prefix is" $general_prefix
 
 output=$output_folder/$general_prefix/$prefix
 
 #echo "info_path" $info_path
 #echo "info_file" $info_file
 #echo "library_path" $library_path
-echo $prefix "profile generated"
 #echo "general_path" $general_path
 #echo "general_prefix" $general_prefix
 #echo "output" $output
@@ -29,5 +33,9 @@ fi
 #touch $output"_profile"
 
 generate_QC_profile.R $library_path $prefix $output"_profile"
+
+echo $prefix "profile generated"
+echo "output in" $output_folder/$general_prefix
+echo
 
 exit
