@@ -7,10 +7,12 @@ output_folder=$2 #directory, where to output the matrixes
 temporary_storage=$3 #directory, where to store all the temporary data
 
 echo "Creating profiles of each library..."
-if [ ! -d $temporary_storage/profiles ]; then 
+if [ ! -d $temporary_storage/profiles ]; then
 	mkdir -p $output_folder/$general_prefix
 fi
 find $top_folder -name "*.info" -exec wrap_gen_QC_profile.sh {} $temporary_storage/profiles \;
+
+if [[ $? != 0 ]]; then exit; fi #checking if previous script was executed ok
 
 echo "Creating list with profiles paths..."
 touch $temporary_storage/profiles_paths
@@ -26,4 +28,3 @@ append_REST_data.sh $output_folder/profiles_matrix $output_folder
 echo "Done"
 
 exit
-
