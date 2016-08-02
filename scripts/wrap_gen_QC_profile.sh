@@ -45,7 +45,7 @@ if [ ! -d $output_folder/$general_prefix ]; then
 	mkdir -p $output_folder/$general_prefix
 fi
 
-#touch $output"_profile"
+> $output"_profile"
 
 generate_QC_profile.R $library_path $prefix $output"_profile"
 

@@ -41,11 +41,11 @@ GenerateProfilesMatrix <- function (profiles_paths) {
 
 # executable code----------------------------------------------------------------------------------------------------
 
-profiles_matrix <- GenerateProfilesMatrix (profiles_paths)
+profiles_matrix <- GenerateProfilesMatrix(profiles_paths)
 rownames(profiles_matrix) <- profiles_matrix$Prefix # assigning prefixes as row names
 profiles_matrix[, Prefix:=NULL] # dropping "prefix" column
-colnames(profiles_matrix) <- gsub ("-", "_", colnames(profiles_matrix)) # substituting scores for underscores 
-colnames(profiles_matrix) <- gsub (" ", "_", colnames(profiles_matrix)) # substituting blanks for underscores 
+colnames(profiles_matrix) <- gsub("-", "_", colnames(profiles_matrix)) # substituting scores for underscores 
+colnames(profiles_matrix) <- gsub(" ", "_", colnames(profiles_matrix)) # substituting blanks for underscores 
 write.table (profiles_matrix, file = output, sep ="\t", row.names = T, col.names = NA, quote = F)
 
 q(status=0)

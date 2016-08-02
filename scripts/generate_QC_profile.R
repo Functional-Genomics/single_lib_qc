@@ -24,14 +24,14 @@ if (length(args)!=3) {
 GenerateQCProfile <- function (path_to_directory, index) {
   
   # list with the mandatory types of files which contain profiling data 
-  types_of_files <- list(info = paste0(index, ".*.info"),
-                         fastqc.tsv_1 = paste0(index, "_1.*.fastqc.tsv|.*.fastqc.tsv"),
-                         fastqc.tsv_2 = paste0(index, "_2.*.fastqc.tsv"),
-                         stats = paste0(index, ".*.bam.stats"),
-                         gene.stats = paste0(index, ".*.gene.stats"),
-                         stats.csv = paste0(index, ".*.stats.csv"),
-                         genes.raw.csv = paste0(index, ".*.genes.raw.*.tsv"),
-                         time = paste0(index,".*.time")) 
+  types_of_files <- list(info = paste0(index, ".*.info$"),
+                         fastqc.tsv_1 = paste0(index, "_1.*.fastqc.tsv$|.*.fastqc.tsv$"),
+                         fastqc.tsv_2 = paste0(index, "_2.*.fastqc.tsv$"),
+                         stats = paste0(index, ".*.bam.stats$"),
+                         gene.stats = paste0(index, ".*.gene.stats$"),
+                         stats.csv = paste0(index, ".*.stats.csv$"),
+                         genes.raw.csv = paste0(index, ".*.genes.raw.*.tsv$"),
+                         time = paste0(index,".*.time$")) 
   
   files_paths <- list()
   files <- list()
@@ -46,10 +46,10 @@ GenerateQCProfile <- function (path_to_directory, index) {
   files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  # checking in the .fastqc.tsv files contain any info
+  # checking if the .fastqc.tsv files contain any info
   for (file in files_paths) {
-   if (file.info(file)$size <= 1 || is.na(file.info(file)$size) == T) 
-     files_paths <- files_paths[-grep(file, files_paths)]
+    if (file.info(file)$size <= 1 || is.na(file.info(file)$size) == T) 
+      files_paths <- files_paths[-grep(paste0("^", file, "$"), files_paths)]
   }
   
   # what to do if the .fastqc.tsv file is present
@@ -62,13 +62,14 @@ GenerateQCProfile <- function (path_to_directory, index) {
   }
   
   # checks for the library's integrity (some files are essential)
-  types_of_files["fastqc.tsv_1"] <- NULL #leaving only essential files
-  types_of_files["fastqc.tsv_2"] <- NULL #leaving only essential files
   if (length(files_paths) != amount_of_files) {
-    cat(index, " ", "ERROR! incomplete library:")
+    cat("There are ", length(files_paths), " essential files, but the script thinks there should be ", amount_of_files, "to process the library. If it breaks here, please, contact Egor \n")
+    cat(index, " ", "ERROR! incomplete library: \n")
+    types_of_files["fastqc.tsv_1"] <- NULL #leaving only essential files
+    types_of_files["fastqc.tsv_2"] <- NULL #leaving only essential files
     for (type in types_of_files) {
       if (length((grep(paste0(type, "($|\\s)"), files_paths))) == 0) {
-        cat(" ", type, "file missing/empty")
+        cat(type, "file missing/empty", "\n")
       }
     }
     cat("\n")

@@ -15,11 +15,11 @@ find $top_folder -name "*.info" -exec wrap_gen_QC_profile.sh {} $temporary_stora
 if [[ $? != 0 ]]; then exit; fi #checking if previous script was executed ok
 
 echo "Creating list with profiles paths..."
-touch $temporary_storage/profiles_paths
+> $temporary_storage/profiles_paths
 find_profiles_paths.sh $temporary_storage/profiles $temporary_storage/profiles_paths
 
 echo "Generating the matrix..."
-touch $output_folder/profiles_matrix
+> $output_folder/profiles_matrix
 generate_profiles_matrix.R $temporary_storage/profiles_paths $output_folder/profiles_matrix
 
 echo "Appending data from REST API..."
