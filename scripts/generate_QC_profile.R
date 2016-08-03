@@ -2,7 +2,7 @@
 args = commandArgs(trailingOnly=TRUE)
 
 path_to_directory <- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
-index <- args[2] # prefix of the library's files (e.g. SRR869012)
+prefix <- args[2] # prefix of the library's files (e.g. SRR869012)
 output <- args[3] # where to place the output (used in write.table)
 
 library(dtplyr) # seams dplyr and data.table
@@ -20,30 +20,31 @@ if (length(args)!=3) {
 
 # MAIN FUNCTION-----------------------------------------------------------------------------------------------------
 
-# generates QC profile of the given library (takes path to the directory and the library's index of character types)
-GenerateQCProfile <- function (path_to_directory, index) {
+# generates QC profile of the given library (takes path to the directory and the library's prefix of character types)
+GenerateQCProfile <- function (path_to_directory, prefix) {
   
   # list with the mandatory types of files which contain profiling data 
-  types_of_files <- list(info = paste0(index, ".*.info$"),
-                         fastqc.tsv_1 = paste0(index, "_1.*.fastqc.tsv$|.*.fastqc.tsv$"),
-                         fastqc.tsv_2 = paste0(index, "_2.*.fastqc.tsv$"),
-                         stats = paste0(index, ".*.bam.stats$"),
-                         gene.stats = paste0(index, ".*.gene.stats$"),
-                         stats.csv = paste0(index, ".*.stats.csv$"),
-                         genes.raw.csv = paste0(index, ".*.genes.raw.*.tsv$"),
-                         time = paste0(index,".*.time$")) 
+  types_of_files <- list(info = paste0(prefix, ".*.info$"),
+                         fastqc.tsv_1 = paste0(prefix, "(_1\\..*\\.fastqc.tsv$)|), prefix, (\\..*\\.fastqc.tsv$)"),
+                         fastqc.tsv_2 = paste0(prefix, "_2\\..*\\.fastqc.tsv$"),
+                         stats = paste0(prefix, ".*.bam.stats$"),
+                         gene.stats = paste0(prefix, ".*.gene.stats$"),
+                         stats.csv = paste0(prefix, ".*.stats.csv$"),
+                         genes.raw.csv = paste0(prefix, ".*.genes.raw.*.tsv$"),
+                         time = paste0(prefix,".*.time$")) 
   
   files_paths <- list()
-  files <- list()
+  #files <- list()
   
   # looking for files with the necessary data and making lists with the full paths to each file
   for (type in types_of_files) {
-    temporary_list <- list.files(path_to_directory, pattern = type)
-    files <- c(files, temporary_list)
+    temporary_list <- list.files(path_to_directory, pattern = type, full.names = T)
+    files_paths <- c(files_paths, temporary_list)
   } 
   
   # creating compelete list with files paths
-  files_paths <- paste0(path_to_directory, sep = "/", files)
+  #files_paths <- paste0(path_to_directory, sep = "/", files)
+  files_paths <- unlist(files_paths)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
   # checking if the .fastqc.tsv files contain any info
@@ -63,13 +64,13 @@ GenerateQCProfile <- function (path_to_directory, index) {
   
   # checks for the library's integrity (some files are essential)
   if (length(files_paths) != amount_of_files) {
-    cat("There are ", length(files_paths), " essential files, but the script thinks there should be ", amount_of_files, "to process the library. If it breaks here, please, contact Egor \n")
-    cat(index, " ", "ERROR! incomplete library: \n")
+    cat(prefix, " ", "ERROR! incomplete library: \n")
     types_of_files["fastqc.tsv_1"] <- NULL #leaving only essential files
     types_of_files["fastqc.tsv_2"] <- NULL #leaving only essential files
-    for (type in types_of_files) {
-      if (length((grep(paste0(type, "($|\\s)"), files_paths))) == 0) {
-        cat(type, "file missing/empty", "\n")
+    for (type_name in names(types_of_files)) {
+      file <- unlist(types_of_files[type_name])
+      if (length(grep(paste0(file, "($|\\s)"), files_paths)) == 0) {
+        cat(type_name, "file missing/empty", "\n")
       }
     }
     cat("\n")
@@ -135,7 +136,7 @@ GenerateQCProfile <- function (path_to_directory, index) {
   
   # creating profile dataframe
   profile_dataframe <- transform(profile_vector, as.numeric())
-  colnames(profile_dataframe) <- index
+  colnames(profile_dataframe) <- prefix
   
   # transposing profile dataframe
   transposed_profile_dataframe <- TransposeWithNames(profile_dataframe)
@@ -239,7 +240,7 @@ DropUnnecessaryColumns <- function (data_frame) {
 
 # Executable code-----------------------------------------------------------------------------------------
 
-profile <- GenerateQCProfile(path_to_directory, index)
+profile <- GenerateQCProfile(path_to_directory, prefix)
 # writes the output to a file
 write.table (profile, file = output, sep ="\t", row.names = T, col.names = NA)
 
