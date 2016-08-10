@@ -1,9 +1,21 @@
+#!/usr/bin/env Rscript
+
 library(data.table)
 library(dplyr)
 library(shiny)
 library(ggplot2)
 library(plotly)
 library(gridExtra)
+
+args = commandArgs(trailingOnly=TRUE)
+
+matrix_path <- args[1] # path to extended matrix
+
+if (length(args)!=1) {
+  cat("usage: <path_to_extended_matrix> \n")
+  cat("ERROR: incorrect number of arguments\n");
+  q(status=1);
+}
 
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 setkey(dataset, Prefix)
