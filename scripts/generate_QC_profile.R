@@ -123,7 +123,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
     }
   }
   
-  # deleting duplicates from part with time and memory values
+  # deleting duplicates from part with time and memory values + adding some new values
   reads_from_stats[[grep("iRAP", reads_from_stats)]] <-
     DeleteTMDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
   
@@ -197,13 +197,27 @@ DeleteTMDuplicates <- function (df) {
     part <- subset(df, df$V1 == name)
     
     last <- part[length(part$V2), ]
+    last$V1 <- paste0(last$V1, "_last")
+    
+    max <- part[which(part$V2 == max(part$V2), arr.ind = T), ]
+    max$V1 <- paste0(max$V1, "_max")
+    
     summ <- aggregate(V2~V1, data = part, FUN = sum) 
     summ$V1 <- paste0(summ$V1, "_sum")
     
-    new_df <- bind_rows(new_df, last, summ)
-    
+    new_df <- bind_rows(new_df, last, max, summ)
+  
   }
-  return(new_df)
+  # deleting _memory_sum, as its meaningless
+  new_df <- new_df[-grep("_memory_sum", new_df$V1), ]
+  new_df <- new_df[!duplicated(new_df), ]
+  
+  #adding summary of all the last times
+  temp_df <- new_df[grep("TIME_.*_last", new_df$V1), ]
+  temp_df <- temp_df[-grep("memory", temp_df$V1), ]
+  temp_df <- data.table(V1 = "TIME_sum", V2 = sum(temp_df$V2))
+  
+  return(bind_rows(new_df, temp_df))
 }
 
 # transposes a dataframe while keeping the names and the variables types

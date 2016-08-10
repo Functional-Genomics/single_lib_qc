@@ -60,7 +60,7 @@ ui <- navbarPage(
            )
            
   ),
-  # the 2nd plot (general overview)
+  # the 2nd tab (general overview)
   tabPanel("General Overview",
            plotOutput("gen_plot", click = "click"),
            verbatimTextOutput("info"),
@@ -81,6 +81,7 @@ ui <- navbarPage(
              )
            )
   ),
+  #the 3rd tab (same plots but with Plotly)
   tabPanel("Plotly Fixed Plots",
            wellPanel(
              fluidRow(
@@ -116,6 +117,19 @@ ui <- navbarPage(
                     plotlyOutput("scat_nreads_time_ply")),
              column(width = 5, offset = 1,
                     plotlyOutput("scat_rs_time_ply"))
+           )
+  ),
+  # the fourth tab, information about single profile
+  tabPanel("Single QC Profile",
+           wellPanel(
+             fluidRow(
+               column(width = 5,
+                      selectInput(inputId = "class", label = "What class do you want to assign?", 
+                                  choices = c("Good", "Bad", "Unclear", "Unknown")
+                      )
+               )
+             ),
+             dataTableOutput("profiles_matrix")
            )
   )
 )
@@ -322,6 +336,11 @@ server <- function(input, output) {
       geom_point() +
       labs(x = "Read size, bases", y = "Time, min")
   })
+  #------------------------------------------------------------------------------------
+  #the 4th tab (profiles)
+  output$profiles_matrix <- renderDataTable({
+    dataset
+  }, options = list(orderClasses = T))
   
 }
 
