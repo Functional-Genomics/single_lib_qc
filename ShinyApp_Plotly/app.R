@@ -1,8 +1,3 @@
-#!/usr/bin/env Rscript
-args = commandArgs(trailingOnly=TRUE)
-
-matrix_path <- args[1] # path to extended matrix
-
 library(data.table)
 library(dplyr)
 library(shiny)
@@ -79,12 +74,23 @@ ui <- navbarPage(
                              plotlyOutput("bar_prof_usr_time"),
                              plotlyOutput("bar_prof_usr_mem"))
              ),
-             tabPanel("Profile from General overview", 
-                      column(width = 4, 
-                             tableOutput("single_prof_gen")),
-                      column(width = 5, offset = 1,
-                             plotlyOutput("bar_prof_gen_time"),
-                             plotlyOutput("bar_prof_gen_mem"))
+             tabPanel("Profile from General overview",
+                      tabsetPanel(
+                        tabPanel("Boxplots",
+                                 column(width = 4, 
+                                        tableOutput("single_prof_gen_box")),
+                                 column(width = 5, offset = 1,
+                                        plotlyOutput("bar_prof_gen_time_box"),
+                                        plotlyOutput("bar_prof_gen_mem_box"))
+                        ),
+                        tabPanel("Scatterplots",
+                                 column(width = 4, 
+                                        tableOutput("single_prof_gen")),
+                                 column(width = 5, offset = 1,
+                                        plotlyOutput("bar_prof_gen_time"),
+                                        plotlyOutput("bar_prof_gen_mem"))
+                        )
+                      )
              ),
              tabPanel("Profile from Fixed Plots",
                       tabsetPanel(
@@ -149,15 +155,20 @@ server <- function(input, output) {
                 margin = list(b = 100,
                               l = 80)) 
     } else if (input$type == "Box Plot") {
-      gp <- ggplot(dataset, aes_string(x = input$x, 
-                                       y = input$y)) + 
-        geom_boxplot(fill = "#4271AE", color = "#1F3552", alpha = 0.7) + 
-        labs(x = input$x, y = input$y) +
-        ggtitle(paste(input$y, "from", input$x)) + 
-        coord_flip()
-      (gp <- ggplotly(gp))
+      plot_ly(data = plot_df, x = x, y = y,
+              type = "scatter", mode = "markers", text = Prefix, name = "Dots",
+              source = "point_gen_box") %>%
+        add_trace(data = plot_df, x = x, y = y,
+                  type = "box", orientation = "h", name = "Boxes") %>%
+        layout (xaxis = list(title = "",
+                             tickangle = 45), 
+                yaxis = list(title = "",
+                             tickangle = 25),
+                margin = list(b = 100,
+                              l = 80)) 
     }
   })
+  
   #------------------------------------------------------------------------------------
   # selector on the 2nd (Plotly plots) tab
   output$fix_val_ply <- renderUI({
@@ -307,7 +318,50 @@ server <- function(input, output) {
              margin = list(l = 300))
   })
   
-  # data and plots of profile from General Overview tab
+  # data and plots of profile from General Overview tab (boxplots)
+  profile_gen_box <- reactive({
+    point_data <- event_data("plotly_click", source = "point_gen_box")
+    if(is.null(point_data) == T) 
+      return(NULL)
+    prefix <-  dataset$Prefix[point_data[[2]] + 1]
+    profile <- dataset[prefix, ]
+    return(profile)
+  })
+  output$single_prof_gen_box <- renderTable({
+    if(is.null(profile_gen_box()) == T) return(NULL) 
+    
+    vector <- transpose(profile_gen_box())
+    rownames(vector) <- colnames(profile_gen_box())
+    colnames(vector) <- "Value"
+    vector
+  })
+  output$bar_prof_gen_time_box <- renderPlotly({
+    if(is.null(profile_gen_box()) == T) return(NULL) 
+    
+    profile <- profile_gen_box()
+    profile <- profile[, grep("TIME_.*_last", colnames(profile), value = T), with = F]
+    profile <- profile[, -grep("TIME_.*_memory_last", colnames(profile), value = T), with = F]
+    
+    plot_ly(data = profile, x = as.numeric(profile), y = colnames(profile),
+            type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Time, min"),
+             yaxis = list(title = ""),
+             margin = list(l = 300))
+  })
+  output$bar_prof_gen_mem_box <- renderPlotly({
+    if(is.null(profile_gen_box()) == T) return(NULL) 
+    
+    profile <- profile_gen_box()
+    profile <- profile[, grep("TIME_.*_last", colnames(profile), value = T), with = F]
+    profile <- profile[, grep("TIME_.*_memory_last", colnames(profile), value = T), with = F]
+    
+    plot_ly(data = profile, x = as.numeric(profile), y = colnames(profile),
+            type = "bar", orientation = "h") %>%
+      layout(xaxis = list(title = "Memory, MB"),
+             yaxis = list(title = ""),
+             margin = list(l = 300))
+  })
+  # data and plots of profile from General Overview tab (scatterplots)
   profile_gen <- reactive({
     point_data <- event_data("plotly_click", source = "point_gen")
     if(is.null(point_data) == T) 
