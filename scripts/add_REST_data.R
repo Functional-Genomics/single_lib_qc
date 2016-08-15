@@ -44,9 +44,35 @@ AppendRESTData <- function (matrix) {
     add_table <- bind_rows(add_table, add_row)
   }
   
-  full_matrix <- bind_cols(matrix, add_table) 
-  return(full_matrix)
+  matrix <- bind_cols(matrix, add_table)
   
+  # adding data about kindgoms 
+  organisms <- unique(matrix$ORGANISM)
+  genuses <- sub("_.*", "", unique(matrix$ORGANISM))
+  kingdoms <- vector()
+  KINGDOM <- vector()
+  
+  for (genus in genuses) {
+    data <- fromJSON(paste0("https://rest.ensembl.org/taxonomy/classification/", genus, "?"))
+    kingdoms <- c(kingdoms, data$scientific_name[length(data$scientific_name) - 1])                
+  }
+  
+  mapping <- data.table(organisms, kingdoms)
+  setkey(mapping, organisms)
+  
+  
+  for (species in matrix$ORGANISM) {
+    kingdom <- mapping[species,,]$kingdoms
+    KINGDOM <- c(KINGDOM, kingdom)
+  }
+  
+  matrix$KINGDOM <- KINGDOM
+  
+  R_path <- Sys.getenv("QC_R_DIR")
+  columns_to_keep <- fread(paste0(R_path, "/columns_to_keep"), header = F, col.names = "Columns")
+  matrix <- matrix[, columns_to_keep$Columns, with = F]
+  
+  return(matrix)
 }
 
 # executable code----------------------------------------------------------------------------------------------------

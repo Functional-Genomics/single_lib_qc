@@ -34,7 +34,6 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
                          time = paste0(prefix,".*.time$")) 
   
   files_paths <- list()
-  #files <- list()
   
   # looking for files with the necessary data and making lists with the full paths to each file
   for (type in types_of_files) {
@@ -43,7 +42,6 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   } 
   
   # creating compelete list with files paths
-  #files_paths <- paste0(path_to_directory, sep = "/", files)
   files_paths <- unlist(files_paths)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
@@ -102,7 +100,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
     unique(reads_from_stats[[genes_raw_pos]])
   
   # getting the nreads and rs data from the info 
-  info_dataframe <- GetRsNreads (reads_from_info)
+  info_dataframe <- GetInfoData(reads_from_info)
   info_dataframe$V1 <- paste0("INFO_", info_dataframe$V1) # adding INFO_ prefix to the row names
   
   # adding prefixes
@@ -151,19 +149,28 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
 # SECONDARY FUNCTIONS-----------------------------------------------------------------------------------
 
 # gets rs and nreads from the list with data from .info, returns a dataframe with columns V1 and V2
-GetRsNreads <- function (reads_from_info) {
+GetInfoData <- function (reads_from_info) {
   
-  sample <- str_split_fixed(reads_from_info$V1, "#", n = 2)
-  nreads <- strsplit(sample[grep("nreads", sample)], "=")
+  info_data <- as.vector(reads_from_info[, 1])
+  info_vect <- vector()
   
-  rs <-strsplit(sample[grep("rs", sample)], "=")[[2]] # TODO: think of a less specific way
-  rs_nreads_list <- c(nreads, rs)
+  features_list <- c("#rs", "#nreads", "strand")
+  for (feature in features_list)
+    info_vect <- c(info_vect, grep(feature, info_data, value = T))
+  info_vect <- unique(info_vect)
   
-  rs_nreads_dataframe <-
-    data.frame(matrix(unlist(rs_nreads_list), nrow = 2, byrow = T), stringsAsFactors = F)
-  colnames(rs_nreads_dataframe) = c("V1", "V2")
+  info_vect <- unlist(as.data.table(strsplit(info_vect, "="))[2])
+  if (length(grep("se", info_data)) != 0) {
+    info_vect <- c(info_vect, "single-end")
+  } else if (length(grep("pe", info_data)) != 0){
+    info_vect <- c(info_vect, "paired-end")
+  } else {
+    info_vect <- c(info_vect, "NA")
+  }
   
-  return(rs_nreads_dataframe)
+  info_df <- data.table(V1 = c("rs", "nreads", "strand", "end_type"), V2 = info_vect)
+  
+  return(info_df)
 }
 
 # converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
