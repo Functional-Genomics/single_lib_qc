@@ -15,11 +15,17 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 
+if ( ! file.exits(matrix_path) ) {
+    cat("ERROR: file",matrix_path," not found.\n")
+    q(status=1)
+}
+cat("Loading matrix...")
 dataset <- fread(matrix_path, na = c("NA", ""))
 #dataset <- extended_profiles_matrix
+cat("done.\n")
 
 ui <- navbarPage(
-  title = "Data Visualization Options",
+  title = "QC profiler stats",
   
   # the 1st tab (specific fixed plots)
   tabPanel("Fixed Plots",

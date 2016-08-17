@@ -8,33 +8,48 @@ if (length(args)!=1) {
   cat("ERROR: incorrect number of arguments\n");
   q(status=1);
 }
-
-library(data.table)
+library(dtplyr)
 library(dplyr)
+library(data.table)
 library(shiny)
 library(ggplot2)
 library(plotly)
 library(RColorBrewer)
+verbose <- TRUE
 
-R_path <<- Sys.getenv("QC_R_DIR") # path to the R folder
+R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
 
+# where should this file reside? R folder? or ShinyApp_Plotly/?
 source(paste0(R_path, "/create_stack_barplot.R")) # function to create stacked barplots
 source(paste0(R_path, "/transpose_profile.R")) # function to output single QC profile vertically
 source(paste0(R_path, "/check_classes_file.R")) # function to check if "classes" file exits and, if not, create one
 source(paste0(R_path, "/determine_profile_class.R")) # function to determine the class of a given profile from the "classes" file mapping
 
+if ( ! file.exists(matrix_path) ) {
+    cat("ERROR: file '", matrix_path, "' not found or access denied.\n")
+    q(status=1)
+}
+cat("Loading matrix ",matrix_path,"...")
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
+cat("done.\n")
+
+
 setkey(dataset, Prefix)
 
-check_classes_file(R_path, dataset)
-classes <<- fread(paste0(R_path, "/classes"))
+classes_file <<- paste0(matrix_path,"_classes")
+check_classes_file(classes_file, dataset, verbose)
+cat("Loading classes ",classes_file,"...")
+classes <<- fread(classes_file)
+cat("done.\n")
 setkey(classes, "Prefix")
 
+cat("Loading configuration...")
 config_table <- fread(paste0(R_path, "/shiny_plots_config"), na = c("NA", ""))
 setkey(config_table, "Name")
+cat("done.\n")
 
 ui <- navbarPage(
-  title = "Work in progress",
+  title = "QC profiler explorer",
   tabPanel("General Overview",
            plotlyOutput("gen_plot"),
            fluidRow(
@@ -363,8 +378,7 @@ server <- function(input, output) {
     }
   })
   observeEvent(input$write_class, {
-    write.table(classes, paste0(R_path, "/classes"), 
-                append = F, quote = F, row.names = F)
+      write.classes(classes,classes_file)
   })
   output$sprof_cust_time <- renderPlotly({
     create_stack_barplot(input$prof_usr, dataset, "TIME")
