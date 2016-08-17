@@ -10,7 +10,7 @@ fi
 if [ "$1-" == "-" ]; then
     path_to_matrix=`pwd`/profiles_data/extended_matrix
 else
-    path_to_matrix=$1
+    path_to_matrix=`readlink -f $1`
 fi
 
 which Rscript >> /dev/null || ( echo "ERROR: Rscript not found" && exit 1 )

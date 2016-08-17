@@ -15,7 +15,7 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 library(RColorBrewer)
-
+verbose <- TRUE
 R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
 
 # where should this file reside? R folder? or ShinyApp_Plotly/?
@@ -37,14 +37,17 @@ cat("done.\n")
 
 setkey(dataset, Prefix)
 
-
-check_classes_file(R_path, dataset)
-cat("Loading classes ",matrix_path,"...")
-classes <<- fread(paste0(R_path, "/classes"))
+classes_file <- paste0(matrix_path,".classes")
+check_classes_file(classes_file,dataset,verbose)
+cat("Loading classes ",classes_file,"...")
+classes <<- fread(classes_file)
+cat("done.\n")
 setkey(classes, "Prefix")
 
+cat("Loading configuration...")
 config_table <- fread(paste0(R_path, "/shiny_plots_config"), na = c("NA", ""))
 setkey(config_table, "Name")
+cat("done.\n")
 
 ui <- navbarPage(
   title = "QC profiler explorer",
