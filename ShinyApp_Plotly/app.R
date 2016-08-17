@@ -26,8 +26,8 @@ source(paste0(R_path, "/check_classes_file.R")) # function to check if "classes"
 source(paste0(R_path, "/determine_profile_class.R")) # function to determine the class of a given profile from the "classes" file mapping
 
 if ( ! file.exists(matrix_path) ) {
-    cat("ERROR: file '", matrix_path, "' not found or access denied.\n")
-    q(status=1)
+  cat("ERROR: file '", matrix_path, "' not found or access denied.\n")
+  q(status=1)
 }
 cat("Loading matrix ",matrix_path,"...")
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
@@ -378,7 +378,7 @@ server <- function(input, output) {
     }
   })
   observeEvent(input$write_class, {
-      write.classes(classes,classes_file)
+    write.classes(classes,classes_file)
   })
   output$sprof_cust_time <- renderPlotly({
     create_stack_barplot(input$prof_usr, dataset, "TIME")
