@@ -18,10 +18,10 @@ library(RColorBrewer)
 
 R_path <<- Sys.getenv("QC_R_DIR") # path to the R folder
 
-source("create_stack_barplot.R") # function to create stacked barplots
-source("transpose_profile.R") # function to output single QC profile vertically
-source("check_classes_file.R") # function to check if "classes" file exits and, if not, create one
-source("determine_profile_class.R") # function to determine the class of a given profile from the "classes" file mapping
+source(paste0(R_path, "/create_stack_barplot.R")) # function to create stacked barplots
+source(paste0(R_path, "/transpose_profile.R")) # function to output single QC profile vertically
+source(paste0(R_path, "/check_classes_file.R")) # function to check if "classes" file exits and, if not, create one
+source(paste0(R_path, "/determine_profile_class.R")) # function to determine the class of a given profile from the "classes" file mapping
 
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 setkey(dataset, Prefix)
