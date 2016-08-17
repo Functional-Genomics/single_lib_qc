@@ -16,14 +16,25 @@ library(ggplot2)
 library(plotly)
 library(RColorBrewer)
 
-R_path <<- Sys.getenv("QC_R_DIR") # path to the R folder
+R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
 
-source("create_stack_barplot.R") # function to create stacked barplots
-source("transpose_profile.R") # function to output single QC profile vertically
-source("check_classes_file.R") # function to check if "classes" file exits and, if not, create one
-source("determine_profile_class.R") # function to determine the class of a given profile from the "classes" file mapping
+# where should this file reside? R folder? or ShinyApp_Plotly/?
+source(paste(R_path,"create_stack_barplot.R",sep="/")) # function to create stacked barplots
+source(paste(R_path,"transpose_profile.R",sep="/")) # function to output single QC profile vertically
+source(paste(R_path,"check_classes_file.R",sep="/")) # function to check if "classes" file exits and, if not, create one
 
-suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
+source(paste(R_path,"determine_profile_class.R",sep="/")) # function to determine the class of a given profile from the "classes" file mapping
+
+if ( ! file.exists(matrix_path) ) {
+    cat("ERROR: file",matrix_path," not found.\n")
+    q(status=1)
+}
+cat("Loading matrix...")
+#suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
+#dataset <- extended_profiles_matrix
+cat("done.\n")
+
+
 setkey(dataset, Prefix)
 
 check_classes_file(R_path, dataset)
