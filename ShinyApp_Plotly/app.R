@@ -8,9 +8,9 @@ if (length(args)!=1) {
   cat("ERROR: incorrect number of arguments\n");
   q(status=1);
 }
-
-library(data.table)
+library(dtplyr)
 library(dplyr)
+library(data.table)
 library(shiny)
 library(ggplot2)
 library(plotly)
@@ -19,17 +19,17 @@ library(RColorBrewer)
 R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
 
 # where should this file reside? R folder? or ShinyApp_Plotly/?
-source(paste(R_path,"create_stack_barplot.R",sep="/")) # function to create stacked barplots
-source(paste(R_path,"transpose_profile.R",sep="/")) # function to output single QC profile vertically
-source(paste(R_path,"check_classes_file.R",sep="/")) # function to check if "classes" file exits and, if not, create one
+source(paste0(R_path,"/create_stack_barplot.R")) # function to create stacked barplots
+source(paste0(R_path,"/transpose_profile.R")) # function to output single QC profile vertically
+source(paste0(R_path,"/check_classes_file.R")) # function to check if "classes" file exits and, if not, create one
 
-source(paste(R_path,"determine_profile_class.R",sep="/")) # function to determine the class of a given profile from the "classes" file mapping
-help(file.exists)
-if ( ! file.access(matrix_path) ) {
-    cat("ERROR: file",matrix_path," not found or access denied.\n")
+source(paste0(R_path,"/determine_profile_class.R")) # function to determine the class of a given profile from the "classes" file mapping
+
+if ( ! file.exists(matrix_path) ) {
+    cat("ERROR: file '",matrix_path,"' not found or access denied.\n")
     q(status=1)
 }
-cat("Loading matrix...")
+cat("Loading matrix ",matrix_path,"...")
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 #dataset <- extended_profiles_matrix
 cat("done.\n")
@@ -37,7 +37,9 @@ cat("done.\n")
 
 setkey(dataset, Prefix)
 
+
 check_classes_file(R_path, dataset)
+cat("Loading classes ",matrix_path,"...")
 classes <<- fread(paste0(R_path, "/classes"))
 setkey(classes, "Prefix")
 
@@ -45,7 +47,7 @@ config_table <- fread(paste0(R_path, "/shiny_plots_config"), na = c("NA", ""))
 setkey(config_table, "Name")
 
 ui <- navbarPage(
-  title = "Work in progress",
+  title = "QC profiler explorer",
   tabPanel("General Overview",
            plotlyOutput("gen_plot"),
            fluidRow(
