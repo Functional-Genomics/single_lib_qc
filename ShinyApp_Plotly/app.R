@@ -379,7 +379,7 @@ server <- function(input, output) {
     }
   })
   observeEvent(input$write_class, {
-    write.table(classes, paste0(R_path, "/classes"), 
+    write.table(classes, classes_file), 
                 append = F, quote = F, row.names = F)
   })
   output$sprof_cust_time <- renderPlotly({
