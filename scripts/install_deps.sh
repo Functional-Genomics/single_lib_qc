@@ -4,8 +4,8 @@
 R --no-save <<EOF
 source("http://bioconductor.org/biocLite.R")
 
-packages<-c("dplyr", "data.table", "dtplyr", "stringr", "curl", "jsonlite", "shiny", "rsconnect", "devtools", "ggplot2", "reshape2", "plotly")
-   
+packages<-c("dplyr", "data.table", "dtplyr", "stringr", "curl", "jsonlite", "shiny", "rsconnect", "devtools", "ggplot2", "reshape2", "plotly" ,"RColorBrewer")
+
 biocLite(packages)
 
 devtools::install_github("rstudio/shinyapps")

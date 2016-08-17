@@ -1,11 +1,4 @@
 #!/usr/bin/env Rscript
-
-library(data.table)
-library(dplyr)
-library(shiny)
-library(ggplot2)
-library(plotly)
-
 args = commandArgs(trailingOnly=TRUE)
 
 matrix_path <- args[1] # path to extended matrix
@@ -16,11 +9,29 @@ if (length(args)!=1) {
   q(status=1);
 }
 
+library(data.table)
+library(dplyr)
+library(shiny)
+library(ggplot2)
+library(plotly)
+library(RColorBrewer)
+
+R_path <<- Sys.getenv("QC_R_DIR") # path to the R folder
+
+source("create_stack_barplot.R") # function to create stacked barplots
+source("transpose_profile.R") # function to output single QC profile vertically
+source("check_classes_file.R") # function to check if "classes" file exits and, if not, create one
+source("determine_profile_class.R") # function to determine the class of a given profile from the "classes" file mapping
+
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 setkey(dataset, Prefix)
 
-source("create_stack_barplot.R")
-source("transpose_profile.R")
+check_classes_file(R_path, dataset)
+classes <<- fread(paste0(R_path, "/classes"))
+setkey(classes, "Prefix")
+
+config_table <- fread(paste0(R_path, "/shiny_plots_config"), na = c("NA", ""))
+setkey(config_table, "Name")
 
 ui <- navbarPage(
   title = "Work in progress",
@@ -54,39 +65,47 @@ ui <- navbarPage(
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("boxplot_num")),
+                    plotlyOutput("fix_box_num")),
              column(width = 5, offset = 1,
-                    plotlyOutput("boxplot_per"))
+                    plotlyOutput("fix_box_per"))
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("scat_rs_rmap")),
+                    plotlyOutput("fix_scat_rs_rmap")),
              column(width = 5, offset = 1,
-                    plotlyOutput("scat_rs_rsl"))
+                    plotlyOutput("fix_scat_rs_rsl"))
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("scat_nreads_mem")),
+                    plotlyOutput("fix_scat_nreads_mem")),
              column(width = 5, offset = 1,
-                    plotlyOutput("scat_rs_mem"))
+                    plotlyOutput("fix_scat_rs_mem"))
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("scat_nreads_time")),
+                    plotlyOutput("fix_scat_nreads_time")),
              column(width = 5, offset = 1,
-                    plotlyOutput("scat_rs_time"))
+                    plotlyOutput("fix_scat_rs_time"))
            )
   ),
   # 3rd tab: information about single profiles 
   tabPanel("Single QC Profile",
            tabsetPanel(
              tabPanel("Custom profile",
-                      textInput("prof_usr", label = "Enter the prefix"),
+                      fluidRow(
+                        column(3, 
+                               textInput("prof_usr", label = "Enter the prefix")),
+                        column(3,
+                               uiOutput("class")),
+                        column(3,
+                               actionButton("update_class", label = "Update Class")),
+                        column(3,
+                               actionButton("write_class", label = "Write Updated Classes"))),
                       column(width = 4,
                              tableOutput("single_prof_cust")),
                       column(width = 7,
-                             plotlyOutput("bar_prof_cust_time"),
-                             plotlyOutput("bar_prof_cust_mem"))
+                             plotlyOutput("sprof_cust_time"),
+                             plotlyOutput("sprof_cust_mem"))
              ),
              tabPanel("Profile from General overview",
                       tabsetPanel(
@@ -94,15 +113,15 @@ ui <- navbarPage(
                                  column(width = 4, 
                                         tableOutput("single_prof_gen_box")),
                                  column(width = 7,
-                                        plotlyOutput("bar_prof_gen_time_box"),
-                                        plotlyOutput("bar_prof_gen_mem_box"))
+                                        plotlyOutput("sprof_gen_box_time"),
+                                        plotlyOutput("sprof_gen_box_mem"))
                         ),
                         tabPanel("Scatterplots",
                                  column(width = 4, 
                                         tableOutput("single_prof_gen_scat")),
                                  column(width = 7,
-                                        plotlyOutput("bar_prof_gen_time_scat"),
-                                        plotlyOutput("bar_prof_gen_mem_scat"))
+                                        plotlyOutput("sprof_gen_scat_time"),
+                                        plotlyOutput("sprof_gen_scat_mem"))
                         )
                       )
              ),
@@ -112,15 +131,15 @@ ui <- navbarPage(
                                  column(width = 4,
                                         tableOutput("single_prof_fix_box")),
                                  column(width = 7,
-                                        plotlyOutput("bar_prof_fix_time_box"),
-                                        plotlyOutput("bar_prof_fix_mem_box"))
+                                        plotlyOutput("sprof_fix_box_time"),
+                                        plotlyOutput("sprof_fix_box_mem"))
                         ),
                         tabPanel("Scatterplots",
                                  column(width = 4,
                                         tableOutput("single_prof_fix_scat")),
                                  column(width = 7,
-                                        plotlyOutput("bar_prof_fix_time_scat"),
-                                        plotlyOutput("bar_prof_fix_mem_scat"))
+                                        plotlyOutput("sprof_fix_scat_time"),
+                                        plotlyOutput("sprof_fix_scat_mem"))
                         )
                       )
              )
@@ -185,7 +204,7 @@ server <- function(input, output) {
   })
   
   #------------------------------------------------------------------------------------
-  # selector on the 2nd (Plotly plots) tab
+  # selector on the Fixed Plots tab
   output$fix_val <- renderUI({
     selectInput(inputId = "fix_val", label = "What value from this group?", 
                 choices = unique(dataset[, get(input$fix_feat)]))
@@ -199,8 +218,9 @@ server <- function(input, output) {
                           variable.name = "Feature", value.name = "Value")
     setkey(plot_data_num, Prefix)
   })
-  # box plots on the 2nd (Plotly) tab
-  output$boxplot_num <- renderPlotly({
+  # box plots on the Fixed Plots tab
+  output$fix_box_num <- renderPlotly({
+    config <- config_table["fix_box_num", ]
     y_names <- unique(gsub(".*_", "", plot_data_num()$Feature))
     plot_ly(plot_data_num(), x = Value, y = Feature,
             type = "scatter", mode = "markers", text = Prefix, name = "Dots",
@@ -211,11 +231,15 @@ server <- function(input, output) {
                           tickangle = 25,
                           tickmode = "array",
                           tickvals = c("STATS.CSV_ReadsSpliced", "STATS.CSV_ReadsUnmapped", "STATS.CSV_ReadsMapped", "STATS.CSV_UniquelyMappedReads", "STATS.CSV_MultimapReads"),
-                          ticktext = y_names),
-             xaxis = list(title = "Value"),
+                          ticktext = y_names,
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)),
+             xaxis = list(title = "Value",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
              margin = list(l = 150))
   })
-  # preparing data for "percentage" PLOTLY box plot
+  # preparing data for "percentage" box plot
   plot_data_per <- reactive ({
     raw_data <- subset(dataset, unlist(dataset[, input$fix_feat, with = F]) %in% input$fix_val)
     raw_data <- raw_data[, c("Prefix",
@@ -232,7 +256,8 @@ server <- function(input, output) {
                           variable.name = "Feature", value.name = "Value")
     setkey(plot_data_per, Prefix)
   })
-  output$boxplot_per <- renderPlotly({
+  output$fix_box_per <- renderPlotly({
+    config <- config_table["fix_box_per", ]
     y_names <- unique(gsub(".*_", "perc", plot_data_per()$Feature))
     plot_ly(plot_data_per(), x = Value, y = Feature,
             type = "scatter", mode = "markers", text = Prefix, name = "Dots",
@@ -243,61 +268,108 @@ server <- function(input, output) {
                           tickangle = 25,
                           tickmode = "array",
                           tickvals = c("STATS.CSV_ReadsSpliced", "STATS.CSV_ReadsUnmapped", "STATS.CSV_ReadsMapped", "STATS.CSV_UniquelyMappedReads", "STATS.CSV_MultimapReads"),
-                          ticktext = y_names),
-             xaxis = list(title = "Percentage"),
+                          ticktext = y_names,
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)),
+             xaxis = list(title = "Percentage",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
              margin = list(l = 150))
   })
   
   # scatterplots
-  # preparing data for PLOTLY scatterplots
+  # preparing data for scatterplots
   scat_data <- reactive({
     scat_data <- subset(dataset, unlist(dataset[, input$fix_feat, with = F]) %in% input$fix_val)
   })
-  output$scat_rs_rmap <- renderPlotly({
+  output$fix_scat_rs_rmap <- renderPlotly({
+    config <- config_table["fix_scat_rs_rmap", ]
     plot_ly(data = scat_data(), x = INFO_rs, y = (STATS.CSV_ReadsMapped / STATS.CSV_All_entries) * 100,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Read Size, bases"),
-             yaxis = list(title = "Mapped Reads, %"))
+      layout(xaxis = list(title = "Read Size, bases",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Mapped Reads, %",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
-  output$scat_rs_rsl <- renderPlotly({
+  output$fix_scat_rs_rsl <- renderPlotly({
+    config <- config_table["fix_scat_rs_rsl", ]
     plot_ly(data = scat_data(), x = INFO_rs, y = (STATS.CSV_ReadsSpliced / STATS.CSV_All_entries) * 100,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Read Size, bases"),
-             yaxis = list(title = "Spliced Reads, %"))
+      layout(xaxis = list(title = "Read Size, bases",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Spliced Reads, %",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
-  output$scat_nreads_mem <- renderPlotly({
+  output$fix_scat_nreads_mem <- renderPlotly({
+    config <- config_table["fix_scat_nreads_mem", ]
     plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_iRAP_Mapping_memory_last,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Number of reads"),
-             yaxis = list(title = "Mapping Memory, MB"))
+      layout(xaxis = list(title = "Number of reads",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Mapping Memory, MB",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
-  output$scat_rs_mem <- renderPlotly({
+  output$fix_scat_rs_mem <- renderPlotly({
+    config <- config_table["fix_scat_rs_mem", ]
     plot_ly(data = scat_data(), x = INFO_rs, y = TIME_iRAP_Mapping_memory_last,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Read Size, bases"),
-             yaxis = list(title = "Mapping Memory, MB"))
+      layout(xaxis = list(title = "Read Size, bases",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Mapping Memory, MB",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
-  output$scat_nreads_time <- renderPlotly({
+  output$fix_scat_nreads_time <- renderPlotly({
+    config <- config_table["fix_scat_nreads_time", ]
     plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_sum,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Number of Reads"),
-             yaxis = list(title = "Time, min"))
+      layout(xaxis = list(title = "Number of Reads",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Time, min",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
-  output$scat_rs_time <- renderPlotly({
+  output$fix_scat_rs_time <- renderPlotly({
+    config <- config_table["fix_scat_rs_time", ]
     plot_ly(data = scat_data(), x = INFO_rs, y = TIME_sum,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
-      layout(xaxis = list(title = "Read Size"),
-             yaxis = list(title = "Time, min"))
+      layout(xaxis = list(title = "Read Size",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "Time, min",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)))
   })
   
   # ------------------------------------------------------------------------------------
   # the 3rd tab (single profile data)
   
   # data and plots of Custom Profile
-  output$bar_prof_cust_time <- renderPlotly({
+  output$class <- renderUI({
+    selectInput(inputId = "class", label = "Profile Quality", choices = c("Good", "Bad", "Unclear", "Unknown"), 
+                selected = determine_profile_class(input$prof_usr, classes))
+  })
+  observeEvent(input$update_class, {
+    if (is.na(classes[input$prof_usr, ]$Class) == F) {
+      classes[input$prof_usr, ]$Class <<- input$class
+    }
+  })
+  observeEvent(input$write_class, {
+    write.table(classes, paste0(R_path, "/classes"), 
+                append = F, quote = F, row.names = F)
+  })
+  output$sprof_cust_time <- renderPlotly({
     create_stack_barplot(input$prof_usr, dataset, "TIME")
   })
-  output$bar_prof_cust_mem <- renderPlotly({
+  output$sprof_cust_mem <- renderPlotly({
     create_stack_barplot(input$prof_usr, dataset, "MEMORY")
   })
   profile_cust <- reactive({
@@ -317,10 +389,10 @@ server <- function(input, output) {
     prefix_gen_box <-  dataset$Prefix[point_data[[2]] + 1]
     return(prefix_gen_box)
   })
-  output$bar_prof_gen_time_box <- renderPlotly({
+  output$sprof_gen_box_time <- renderPlotly({
     create_stack_barplot(prefix_gen_box(), dataset, "TIME")
   })
-  output$bar_prof_gen_mem_box <- renderPlotly({
+  output$sprof_gen_box_mem <- renderPlotly({
     create_stack_barplot(prefix_gen_box(), dataset, "MEMORY")
   })
   profile_gen_box <- reactive({
@@ -338,10 +410,10 @@ server <- function(input, output) {
     prefix_gen_scat <-  dataset$Prefix[point_data[[2]] + 1]
     return(prefix_gen_scat)
   })
-  output$bar_prof_gen_time_scat <- renderPlotly({
+  output$sprof_gen_scat_time <- renderPlotly({
     create_stack_barplot(prefix_gen_scat(), dataset, "TIME")
   })
-  output$bar_prof_gen_mem_scat <- renderPlotly({
+  output$sprof_gen_scat_mem <- renderPlotly({
     create_stack_barplot(prefix_gen_scat(), dataset, "MEMORY")
   })
   profile_gen_scat <- reactive({
@@ -352,6 +424,7 @@ server <- function(input, output) {
     transpose_profile(profile_gen_scat())
   })
   
+  
   # data and plots of profile from Fixed Plots tab (boxplots)
   prefix_fix_box <- reactive({
     point_data <- event_data("plotly_click", source = "point_fix_box")
@@ -360,10 +433,10 @@ server <- function(input, output) {
     prefix_fix_box <-  plot_data_num()$Prefix[point_data[[2]] + 1]
     return(prefix_fix_box)
   })
-  output$bar_prof_fix_time_box <- renderPlotly({
+  output$sprof_fix_box_time <- renderPlotly({
     create_stack_barplot(prefix_fix_box(), dataset, "TIME")
   })
-  output$bar_prof_fix_mem_box <- renderPlotly({
+  output$sprof_fix_box_mem <- renderPlotly({
     create_stack_barplot(prefix_fix_box(), dataset, "MEMORY")
   })
   profile_fix_box <- reactive({
@@ -373,7 +446,6 @@ server <- function(input, output) {
   output$single_prof_fix_box <- renderTable({
     transpose_profile(profile_fix_box())
   })
-  
   # data and plots of profile from Fixed Plots tab (scatterplots)
   prefix_fix_scat <- reactive({
     point_data <- event_data("plotly_click", source = "point_fix_scat")
@@ -382,10 +454,10 @@ server <- function(input, output) {
     prefix_fix_scat <-  scat_data()$Prefix[point_data[[2]] + 1]
     return(prefix_fix_scat)
   })
-  output$bar_prof_fix_time_scat <- renderPlotly({
+  output$sprof_fix_scat_time <- renderPlotly({
     create_stack_barplot(prefix_fix_scat(), dataset, "TIME")
   })
-  output$bar_prof_fix_mem_scat <- renderPlotly({
+  output$sprof_fix_scat_mem <- renderPlotly({
     create_stack_barplot(prefix_fix_scat(), dataset, "MEMORY")
   })
   profile_fix_scat <- reactive({
