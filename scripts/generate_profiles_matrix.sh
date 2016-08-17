@@ -3,12 +3,20 @@
 set -e
 
 top_folder=$1 #directory, where to look for libraries
-output_folder=$2 #directory, where to output the matrixes
+output_folder=$2 #directory, where to output the matrixes (with and without REST-API data)
 temporary_storage=$3 #directory, where to store all the temporary data
+
+if [ ! -d $output_folder ]; then
+	mkdir -p $output_folder
+fi
+
+if [ ! -d $temporary_storage ]; then
+	mkdir -p $temporary_storage
+fi
 
 echo "Creating profiles of each library..."
 if [ ! -d $temporary_storage/profiles ]; then
-	mkdir -p $output_folder/$general_prefix
+	mkdir -p $temporary_storage/profiles
 fi
 find $top_folder -name "*.info" -exec wrap_gen_QC_profile.sh {} $temporary_storage/profiles \;
 
