@@ -379,8 +379,7 @@ server <- function(input, output) {
     }
   })
   observeEvent(input$write_class, {
-    write.table(classes, classes_file), 
-                append = F, quote = F, row.names = F)
+      write.classes(classes,classes_file)
   })
   output$sprof_cust_time <- renderPlotly({
     create_stack_barplot(input$prof_usr, dataset, "TIME")
