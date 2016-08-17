@@ -1,8 +1,8 @@
 
 write_classes <- function(file,classes) {
 
-    write.table(classes, classes_file), sep="\t",
-    append = FALSE, quote = FALSE, row.names = FALSE)
+    write.table(classes, classes_file, sep="\t",
+                append = FALSE, quote = FALSE, row.names = FALSE)
 
 }
 check_classes_file <- function(file,dataset,verbose=FALSE) {
