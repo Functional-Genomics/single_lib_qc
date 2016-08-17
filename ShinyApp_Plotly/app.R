@@ -24,13 +24,13 @@ source(paste(R_path,"transpose_profile.R",sep="/")) # function to output single 
 source(paste(R_path,"check_classes_file.R",sep="/")) # function to check if "classes" file exits and, if not, create one
 
 source(paste(R_path,"determine_profile_class.R",sep="/")) # function to determine the class of a given profile from the "classes" file mapping
-
-if ( ! file.exists(matrix_path) ) {
-    cat("ERROR: file",matrix_path," not found.\n")
+help(file.exists)
+if ( ! file.access(matrix_path) ) {
+    cat("ERROR: file",matrix_path," not found or access denied.\n")
     q(status=1)
 }
 cat("Loading matrix...")
-#suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
+suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 #dataset <- extended_profiles_matrix
 cat("done.\n")
 
