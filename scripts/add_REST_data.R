@@ -25,7 +25,8 @@ AppendRESTData <- function (matrix) {
   
   prefix_list <- matrix$Prefix
   add_table <- data.table()
-  counter <- 1
+  add_table_list <- list()
+  i <- 1
   
   for (prefix in prefix_list) {
     
@@ -35,26 +36,31 @@ AppendRESTData <- function (matrix) {
                             ORGANISM = NA,
                             REFERENCE_ORGANISM = NA,
                             MAPPING_QUALITY = NA)
-      missing_data[counter] <<- prefix
-      counter <- counter + 1
+      missing_data <<- c(missing_data, prefix)
       
     } else {
       add_row <- add_row[, c("STUDY_ID", "ORGANISM", "REFERENCE_ORGANISM", "MAPPING_QUALITY")]
     }
-    add_table <- bind_rows(add_table, add_row)
+    add_table_list[[i]] <- add_row
+    i <- i+1
   }
   
+  add_table <- bind_rows(add_table_list)
   matrix <- bind_cols(matrix, add_table)
   
   # adding data about kindgoms 
   organisms <- unique(matrix$ORGANISM)
-  genuses <- sub("_.*", "", unique(matrix$ORGANISM))
+  genuses <- sub("_.*", "", organisms)
   kingdoms <- vector()
   KINGDOM <- vector()
   
   for (genus in genuses) {
-    data <- fromJSON(paste0("https://rest.ensembl.org/taxonomy/classification/", genus, "?"))
-    kingdoms <- c(kingdoms, data$scientific_name[length(data$scientific_name) - 1])                
+    if (is.na(genus)) {
+      kingdoms <- c(kingdoms, "NA")
+    } else {
+      data <- fromJSON(paste0("https://rest.ensembl.org/taxonomy/classification/", genus, "?"))
+      kingdoms <- c(kingdoms, data$scientific_name[length(data$scientific_name) - 1])
+    }
   }
   
   mapping <- data.table(organisms, kingdoms)
@@ -70,7 +76,8 @@ AppendRESTData <- function (matrix) {
   
   R_path <- Sys.getenv("QC_R_DIR")
   columns_to_keep <- fread(paste0(R_path, "/columns_to_keep"), header = F, col.names = "Columns")
-  matrix <- matrix[, columns_to_keep$Columns, with = F]
+  keep <- intersect(columns_to_keep$Columns, colnames(matrix))
+  matrix <- matrix[, keep, with = F]
   
   return(matrix)
 }

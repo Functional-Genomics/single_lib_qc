@@ -8,6 +8,7 @@ if (length(args)!=1) {
   cat("ERROR: incorrect number of arguments\n");
   q(status=1);
 }
+
 library(dtplyr)
 library(dplyr)
 library(data.table)
@@ -38,7 +39,7 @@ setkey(dataset, Prefix)
 
 classes_file <<- paste0(matrix_path,"_classes")
 check_classes_file(classes_file, dataset, verbose)
-cat("Loading classes ",classes_file,"...")
+cat("Loading classes ", classes_file, "...")
 classes <<- fread(classes_file)
 cat("done.\n")
 setkey(classes, "Prefix")
@@ -49,7 +50,7 @@ setkey(config_table, "Name")
 cat("done.\n")
 
 ui <- navbarPage(
-  title = "QC profiler explorer",
+  title = "QC profile explorer",
   tabPanel("General Overview",
            plotlyOutput("gen_plot"),
            fluidRow(

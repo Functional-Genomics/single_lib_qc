@@ -159,6 +159,16 @@ GetInfoData <- function (reads_from_info) {
     info_vect <- c(info_vect, grep(feature, info_data, value = T))
   info_vect <- unique(info_vect)
   
+  if (length(grep("strand", info_vect)) > 1) {
+    cat("WARNING: strand from .info has", length(grep("strand", info_vect)), "values (" ,
+        unlist(as.data.table(strsplit(grep("strand", info_vect, value = T), "="))[2]),
+        ")", path_to_directory, "\tprefix:", prefix, "\n")
+    strand_pos_last <- grep("strand", info_vect)[length(grep("strand", info_vect))]
+    strand_last <- info_vect[strand_pos_last]
+    info_vect <- info_vect[-grep("strand", info_vect)]
+    info_vect <- c(info_vect, strand_last)
+  }
+  
   info_vect <- unlist(as.data.table(strsplit(info_vect, "="))[2])
   if (length(grep("se", info_data)) != 0) {
     info_vect <- c(info_vect, "single-end")
