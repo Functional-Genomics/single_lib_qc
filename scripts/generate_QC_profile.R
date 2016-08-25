@@ -22,10 +22,14 @@ if (length(args) < 3 || length(args) > 4) {
 
 # checking if some data was already uploaded
 if (exists("columns_to_keep") == F) columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
-if (exists("runs_df") == F && length(path_to_runs) > 0) {
-  runs_df <<- fread(path_to_runs, verbose = F)
-  setkey(runs_df, Run)
+if (exists("runs_df") == F) {
+  runs_df <<- data.table()
+  if (!is.na(args[4])) {
+    runs_df <<- fread(path_to_runs)
+    setkey(runs_df, Run)
+  }
 }
+
 # used functions----------------------------------------------------------------------------------------------------
 
 # MAIN FUNCTION-----------------------------------------------------------------------------------------------------
@@ -313,7 +317,7 @@ AddMoreData <- function (profile, path_to_directory) {
   data_info_path <- list.files(path_to_directory, pattern = paste0(prefix, ".*\\.data_info.tsv$"), full.names = T)
   
   if (length(data_info_path) == 0) {
-    if (length("path_to_runs") == 0) {
+    if (is.data.frame(runs_df) && nrow(runs_df)==0) {
       columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
                    "Genome:median.length", "Exons:size", "Exons:min.length", "Exons:max.length", "Exons:num.seqs",
                    "Exons:mean.length", "Exons:median.length", "Transcripts:size", "Transcripts:min.length", "Transcripts:max.length", "Transcripts:num.seqs",
