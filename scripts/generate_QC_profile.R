@@ -30,7 +30,7 @@ columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F,
 runs_df <- NULL
 if (!is.null(path_to_runs) ) {
   cat("INFO: extra matrix provided",path_to_runs,"\n")
-  runs_df <<- fread(path_to_runs)
+  runs_df <<- suppressWarnings(fread(path_to_runs))
   setkey(runs_df, Run)
 }
 
@@ -252,8 +252,7 @@ GetTimeData <- function (reads_from_time) {
 
 # gets pipeline version
 GetVersionData <- function (df) {
-  setkey(df, V1)
-  df <- df["Pipeline", ]
+  df[df$V1 == "Pipeline"]
   df <- subset(df, select = c("V1", "V3"))
   colnames(df) <- c("V1", "V2")
   return(df)
