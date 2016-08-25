@@ -22,8 +22,10 @@ if (length(args) < 3 || length(args) > 4) {
 
 # checking if some data was already uploaded
 if (exists("columns_to_keep") == F) columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
-if (exists("runs_df") == F) runs_df <<- data.table()
-
+if (exists("runs_df") == F && length(path_to_runs) > 0) {
+  runs_df <<- fread(path_to_runs, verbose = F)
+  setkey(runs_df, Run)
+}
 # used functions----------------------------------------------------------------------------------------------------
 
 # MAIN FUNCTION-----------------------------------------------------------------------------------------------------
@@ -171,9 +173,6 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   # adding more data to profile (species, study_id, etc.)
   extended_profile <- AddMoreData(transposed_profile_dataframe, path_to_directory)
   
-  #renaming some of the columns for future SHINY convinience
-  colnames(extended_profile)[grep("Study", colnames(extended_profile))]
-  
   return (extended_profile)
   
 }
@@ -314,7 +313,7 @@ AddMoreData <- function (profile, path_to_directory) {
   data_info_path <- list.files(path_to_directory, pattern = paste0(prefix, ".*\\.data_info.tsv$"), full.names = T)
   
   if (length(data_info_path) == 0) {
-    if (exists("path_to_runs") == F) {
+    if (length("path_to_runs") == 0) {
       columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
                    "Genome:median.length", "Exons:size", "Exons:min.length", "Exons:max.length", "Exons:num.seqs",
                    "Exons:mean.length", "Exons:median.length", "Transcripts:size", "Transcripts:min.length", "Transcripts:max.length", "Transcripts:num.seqs",
@@ -323,10 +322,6 @@ AddMoreData <- function (profile, path_to_directory) {
       add_df <- data.table(matrix(ncol = length(columns), nrow = 1))
       colnames(add_df) <- columns
     } else {
-      if (is.data.frame(runs_df) && nrow(runs_df) == 0) {
-        runs_df <<- fread(path_to_runs)
-        setkey(runs_df, Run)
-      }
       add_df <- runs_df[prefix, ][, -"Run", with = F]
     }
   } else {
