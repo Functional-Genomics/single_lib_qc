@@ -116,8 +116,3 @@ fastqc.tsv_2_Overrepresented_sequences
 fastqc.tsv_2_Adapter_Content
 fastqc.tsv_2_Kmer_Content
 fastqc.tsv_2_Total_Sequences
-STUDY_ID
-ORGANISM
-REFERENCE_ORGANISM
-MAPPING_QUALITY
-KINGDOM

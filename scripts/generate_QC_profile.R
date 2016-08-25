@@ -25,9 +25,9 @@ if (length(args) < 3 || length(args) > 4) {
 }
 
 # checking if some data was already uploaded
-if (exists("columns_to_keep") == F) columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
+columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
 
-runs.df <- NULL
+runs_df <- NULL
 if (!is.null(path_to_runs) ) {
   cat("INFO: extra matrix provided",path_to_runs,"\n")
   runs_df <<- fread(path_to_runs)
@@ -325,7 +325,7 @@ AddMoreData <- function (profile, path_to_directory) {
                    "Transcripts:mean.length", "Transcripts:median.length", "Genes:size", "Genes:min.length", "Genes:max.length", "Genes:num.seqs",
                    "Genes:mean.length", "Genes:median.length", "Taxon_ID", "KINGDOM")
   if (length(data_info_path) == 0) {
-    if (is.data.frame(runs_df) && nrow(runs_df)==0) {
+    if (is.null(runs_df)) {
       add_df <- data.table(matrix(ncol = length(columns), nrow = 1))
       colnames(add_df) <- columns
     } else {
