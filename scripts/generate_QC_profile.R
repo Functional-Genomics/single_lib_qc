@@ -319,14 +319,13 @@ TransposeWithNames <- function (data.frame) {
 AddMoreData <- function (profile, path_to_directory) {
   prefix <- profile$Prefix
   data_info_path <- list.files(path_to_directory, pattern = paste0(prefix, ".*\\.data_info.tsv$"), full.names = T)
-  columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
+  columns <- c("ORGANISM", "Annotation", "Run", "STUDY_ID", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
                    "Genome:median.length", "Exons:size", "Exons:min.length", "Exons:max.length", "Exons:num.seqs",
                    "Exons:mean.length", "Exons:median.length", "Transcripts:size", "Transcripts:min.length", "Transcripts:max.length", "Transcripts:num.seqs",
                    "Transcripts:mean.length", "Transcripts:median.length", "Genes:size", "Genes:min.length", "Genes:max.length", "Genes:num.seqs",
-                   "Genes:mean.length", "Genes:median.length")
+                   "Genes:mean.length", "Genes:median.length", "Taxon_ID", "KINGDOM")
   if (length(data_info_path) == 0) {
     if (is.data.frame(runs_df) && nrow(runs_df)==0) {
-      // empty df
       add_df <- data.table(matrix(ncol = length(columns), nrow = 1))
       colnames(add_df) <- columns
     } else {
