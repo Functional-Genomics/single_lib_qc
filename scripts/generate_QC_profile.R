@@ -1,20 +1,28 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-path_to_directory <- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
-prefix <- args[2] # prefix of the library's files (e.g. SRR869012)
-output <- args[3] # where to place the output (used in write.table)
+path_to_directory <<- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
+prefix <<- args[2] # prefix of the library's files (e.g. SRR869012)
+output <<- args[3] # where to place the output (used in write.table)
+path_to_runs <<- args[4] # path to runs.tsv file
 
 library(dtplyr) # seams dplyr and data.table
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(dplyr))
 library(stringr)
 
-if (length(args)!=3) {
-  cat("usage:  <path_to_folder> <filename_prefix> <output_file> \n")
+R_folder_path <<- Sys.getenv("QC_R_DIR")
+columns_to_keep <- data.table()
+
+if (length(args) < 3 || length(args) > 4) {
+  cat("usage:  <path_to_folder> <filename_prefix> <output_file> optionally:<path_to_runs.tsv> \n")
   cat("ERROR: incorrect amount of arguments\n");
   q(status=1);
 }
+
+# checking if some data was already uploaded
+if (exists("columns_to_keep") == F) columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
+if (exists("runs_df") == F) runs_df <<- data.table()
 
 # used functions----------------------------------------------------------------------------------------------------
 
@@ -31,7 +39,8 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
                          gene.stats = paste0(prefix, ".*.gene.stats$"),
                          stats.csv = paste0(prefix, ".*.stats.csv$"),
                          genes.raw.csv = paste0(prefix, ".*.genes.raw.*.tsv$"),
-                         time = paste0(prefix,".*.time$")) 
+                         time = paste0(prefix,".*.time$"),
+                         irap.versions = paste0("irap.versions.tsv")) 
   
   files_paths <- list()
   
@@ -45,7 +54,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   files_paths <- unlist(files_paths)
   files_paths <- unique(files_paths) #getting rid of the duplicates (check for another way?)
   
-  # checking if the .fastqc.tsv files contain any info
+  # checking if the files contain any info (or exist at all)
   for (file in files_paths) {
     if (file.info(file)$size <= 1 || is.na(file.info(file)$size) == T) 
       files_paths <- files_paths[-grep(paste0("^", file, "$"), files_paths)]
@@ -84,12 +93,16 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   time_path <- files_paths[grep("time", files_paths)]
   ncols <- max(count.fields(time_path))
   reads_from_time <- read.table(time_path, header = F, 
-                                col.names = paste0("V", 1:ncols), fill = T)[1:4]
+                                col.names = paste0("V", 1:ncols), fill = T)[1:5]
   
   # converting time/memory dataframe to a 2-column one, leaving memory (.time dataframe)
-  reads_from_time <- ConvertTimeList (reads_from_time)
+  reads_from_time <- GetTimeData(reads_from_time)
   # addind time df to stats df
-  reads_from_stats <- append(reads_from_stats, list(reads_from_time))
+  reads_from_stats <- append(reads_from_stats, list(reads_from_time, date_dataframe))
+  
+  # getting pipeline version from the data
+  reads_from_stats[[grep("Pipeline", reads_from_stats)]] <-
+    GetVersionData(reads_from_stats[[grep("Pipeline", reads_from_stats)]])
   
   # summing up the data from .genes.raw.tsv
   genes_raw_pos <- grep("genes.raw", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
@@ -110,8 +123,12 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
     paste0("STATS_",  reads_from_stats[[grep("source", reads_from_stats)]]$V1)
   reads_from_stats[[grep("entries", reads_from_stats)]]$V1 <-
     paste0("STATS.CSV_",  reads_from_stats[[grep("entries", reads_from_stats)]]$V1)
-  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1 <-
-    paste0("TIME_",  reads_from_stats[[grep("iRAP", reads_from_stats)]]$V1)
+  reads_from_stats[[grep("memory", reads_from_stats)]]$V1 <-
+    paste0("TIME_",  reads_from_stats[[grep("memory", reads_from_stats)]]$V1)
+  reads_from_stats[[grep("Pipeline", reads_from_stats)]]$V1 <-
+    paste0("VERSION_", reads_from_stats[[grep("Pipeline", reads_from_stats)]]$V1)
+  reads_from_stats[[grep("date", reads_from_stats)]]$V1 <-
+    paste0("TIME_",  reads_from_stats[[grep("date", reads_from_stats)]]$V1)
   # if the data from .fastqc.tsv is present, add prefixes to it, too
   if (length(grep("fastqc.tsv", files_paths)) != 0) {
     for (position in grep("FASTQC", reads_from_stats)) {
@@ -122,11 +139,16 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   }
   
   # deleting duplicates from part with time and memory values + adding some new values
-  reads_from_stats[[grep("iRAP", reads_from_stats)]] <-
-    DeleteTMDuplicates(reads_from_stats[[grep("iRAP", reads_from_stats)]])
+  reads_from_stats[[grep("memory", reads_from_stats)]] <-
+    CleanTimeDF(reads_from_stats[[grep("memory", reads_from_stats)]])
+  reads_from_stats[[grep("date", reads_from_stats)]] <-
+    CleanTimeDF(reads_from_stats[[grep("date", reads_from_stats)]])
+  
+  # converting every column to character
+  reads_from_stats <- lapply(reads_from_stats, ConvertColsToChar)
   
   # converting list of the dataframes to a single dataframe
-  stats_dataframe <- rbindlist(reads_from_stats)
+  stats_dataframe <- bind_rows(reads_from_stats)
   
   # creating profile vector
   profile_vector <- bind_rows(info_dataframe, stats_dataframe)$V2
@@ -134,15 +156,25 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   
   # creating profile dataframe
   profile_dataframe <- transform(profile_vector, as.numeric())
-  colnames(profile_dataframe) <- prefix
   
   # transposing profile dataframe
   transposed_profile_dataframe <- TransposeWithNames(profile_dataframe)
+  transposed_profile_dataframe <- bind_cols(data.table(Prefix = prefix), transposed_profile_dataframe)
+  
+  # substituting blanks for underscores
+  colnames(transposed_profile_dataframe) <- gsub(" |-", "_", colnames(transposed_profile_dataframe)) 
   
   # cleaning dataframe (dropping non-important columns, if there are such)
-  transposed_profile_dataframe <- DropUnnecessaryColumns(transposed_profile_dataframe)
+  keep <- intersect(columns_to_keep$Columns, colnames(transposed_profile_dataframe))
+  transposed_profile_dataframe <- transposed_profile_dataframe[, keep, with = F]
   
-  return (transposed_profile_dataframe)
+  # adding more data to profile (species, study_id, etc.)
+  extended_profile <- AddMoreData(transposed_profile_dataframe, path_to_directory)
+  
+  #renaming some of the columns for future SHINY convinience
+  colnames(extended_profile)[grep("Study", colnames(extended_profile))]
+  
+  return (extended_profile)
   
 }
 
@@ -184,29 +216,44 @@ GetInfoData <- function (reads_from_info) {
 }
 
 # converts the "time" list of the reads_from_stats to a 2-column dataframe (time+memory)
-ConvertTimeList <- function (reads_from_time) {
+GetTimeData <- function (reads_from_time) {
   
   names <- reads_from_time$V1
   
   col_memory_names <- paste0(names, "_memory")
-  col_memory_values <- reads_from_time$V4
+  col_memory_values <- as.double(reads_from_time$V4)
   
-  memory_dataframe <- data.frame (col_memory_names, col_memory_values)
+  col_date_names <- paste0(names, "_date")
+  col_date_values <- as.Date(reads_from_time$V5) 
+  
+  memory_dataframe <- data.frame(col_memory_names, col_memory_values)
   colnames(memory_dataframe) <- c("V1", "V2")
+  memory_dataframe$V1 <- as.character(memory_dataframe$V1)
   
-  reads_from_time <- subset(reads_from_time, select = c(V1,V3))
-  colnames(reads_from_time) <- c("V1", "V2")
+  date_dataframe <<- data.frame(col_date_names, col_date_values)
+  colnames(date_dataframe) <<- c("V1", "V2")
+  date_dataframe$V1 <<- as.character(date_dataframe$V1)
   
-  memory_dataframe$V2 <- as.double(memory_dataframe$V2)
-  reads_from_time <- rbind(reads_from_time, memory_dataframe)
-  reads_from_time$V1 <- as.character(reads_from_time$V1)
+  time_dataframe <- subset(reads_from_time, select = c(V1,V3))
+  colnames(time_dataframe) <- c("V1", "V2")
+  time_dataframe$V1 <- as.character(time_dataframe$V1)
+  
+  reads_from_time <- bind_rows(time_dataframe, memory_dataframe)
   
   return(reads_from_time)
-  
 }
 
-# deletes duplicates in the time and memory list and adds "sum" column
-DeleteTMDuplicates <- function (df) {
+# gets pipeline version
+GetVersionData <- function (df) {
+  setkey(df, V1)
+  df <- df["Pipeline", ]
+  df <- subset(df, select = c("V1", "V3"))
+  colnames(df) <- c("V1", "V2")
+  return(df)
+}
+
+# cleans time/memory/date part of the df
+CleanTimeDF <- function (df) {
   var_names <- unique(df$V1)
   new_df <- data_frame()
   for (name in var_names) {
@@ -219,22 +266,34 @@ DeleteTMDuplicates <- function (df) {
     max <- part[which(part$V2 == max(part$V2), arr.ind = T), ]
     max$V1 <- paste0(max$V1, "_max")
     
-    summ <- aggregate(V2~V1, data = part, FUN = sum) 
-    summ$V1 <- paste0(summ$V1, "_sum")
+    if (length(grep("_memory|_date", name)) == 0) {
+      summ <- aggregate(V2~V1, data = part, FUN = sum) 
+      summ$V1 <- paste0(summ$V1, "_sum")
+      
+      new_df <- bind_rows(new_df, last, max, summ)
+    } else {
+      # this is for processing the memory or the date parts (as we don't need sum of their last values)
+      new_df <- bind_rows(new_df, last, max)
+    }
     
-    new_df <- bind_rows(new_df, last, max, summ)
-  
   }
-  # deleting _memory_sum, as its meaningless
-  new_df <- new_df[-grep("_memory_sum", new_df$V1), ]
-  new_df <- new_df[!duplicated(new_df), ]
   
   #adding summary of all the last times
-  temp_df <- new_df[grep("TIME_.*_last", new_df$V1), ]
-  temp_df <- temp_df[-grep("memory", temp_df$V1), ]
-  temp_df <- data.table(V1 = "TIME_sum", V2 = sum(temp_df$V2))
+  if (length(grep("_date", new_df)) == 0) {
+    temp_df <- new_df[grep("TIME_.*_last", new_df$V1), ]
+    temp_df <- temp_df[-grep("memory", temp_df$V1), ]
+    temp_df <- data.table(V1 = "TIME_sum", V2 = sum(temp_df$V2))
+    new_df <- bind_rows(new_df, temp_df)
+  }
   
-  return(bind_rows(new_df, temp_df))
+  return(new_df)
+}
+
+# converts every column in dataframe into numeric type
+ConvertColsToChar <- function (df) {
+  df$V1 <- as.character(df$V1)
+  df$V2 <- as.character(df$V2)
+  return(df)
 }
 
 # transposes a dataframe while keeping the names and the variables types
@@ -249,23 +308,33 @@ TransposeWithNames <- function (data.frame) {
   return(transposed_data_frame)
 }
 
-# deletes unnecessary columns
-DropUnnecessaryColumns <- function (data_frame) {
+# append additional data to the profile (species, study_id, etc.)
+AddMoreData <- function (profile, path_to_directory) {
+  prefix <- profile$Prefix
+  data_info_path <- list.files(path_to_directory, pattern = paste0(prefix, ".*\\.data_info.tsv$"), full.names = T)
   
-  unnecessary_columns_list <- list ("source", "IG", "TR", "3prime_overlapping_ncrna", "insdc", 
-                                    "macro_lncRNA", "mirbase", "misc_RNA", "non_stop_decay", "nonsense_mediated_decay",
-                                    "polymorphic_pseudogene", "ribozyme", "sense_intronic", "sense_overlapping",
-                                    "Mt_rRNA", "Mt_tRNA", "transcribed_unitary_pseudogene", "vaultRNA", "FlyBase", 
-                                    "pre_miRNA", "WormBase", "FASTQC")
-  
-  for (name in unnecessary_columns_list) {
-    if (length(grep(name, colnames(data_frame))) != 0)
-      data_frame <-
-        data_frame[, -grep(name, colnames(data_frame))] #source column
+  if (length(data_info_path) == 0) {
+    if (exists("path_to_runs") == F) {
+      columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
+                   "Genome:median.length", "Exons:size", "Exons:min.length", "Exons:max.length", "Exons:num.seqs",
+                   "Exons:mean.length", "Exons:median.length", "Transcripts:size", "Transcripts:min.length", "Transcripts:max.length", "Transcripts:num.seqs",
+                   "Transcripts:mean.length", "Transcripts:median.length", "Genes:size", "Genes:min.length", "Genes:max.length", "Genes:num.seqs",
+                   "Genes:mean.length", "Genes:median.length")
+      add_df <- data.table(matrix(ncol = length(columns), nrow = 1))
+      colnames(add_df) <- columns
+    } else {
+      if (is.data.frame(runs_df) && nrow(runs_df) == 0) {
+        runs_df <<- fread(path_to_runs)
+        setkey(runs_df, Run)
+      }
+      add_df <- runs_df[prefix, ][, -"Run", with = F]
+    }
+  } else {
+    add_df <- fread(data_info_path)
   }
   
-  return (data_frame)
-  
+  profile_extended <- bind_cols(profile, add_df)
+  return(profile_extended)
 }
 #--------------------------------------------------------------------------------------------------------
 
@@ -273,6 +342,6 @@ DropUnnecessaryColumns <- function (data_frame) {
 
 profile <- GenerateQCProfile(path_to_directory, prefix)
 # writes the output to a file
-write.table (profile, file = output, sep ="\t", row.names = T, col.names = NA)
+write.table (profile, file = output, sep ="\t", row.names = F, col.names = T, quote = F)
 
 q(status=0)

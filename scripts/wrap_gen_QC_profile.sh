@@ -1,56 +1,51 @@
-#!/bin/bash
+#!/bin/sh
+#; -*- mode: Makefile;-*-
+#the next line restarts using\
+exec make --warn-undefined-variables -Rf "$0"  ${1+"$@"} 
 
-set -e
 
-info_path=$1
-output_folder=$2
+ifndef info_path
+$(error missing parameter: info_path)
+endif
 
-if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-	echo "info_path or output_folder are empty"
-	exit 1
-fi
-#echo "info_path is" $1
-#echo "output_folder is" $2
+file_exists=$(if  $(realpath $(1)),,$(error  $(1) not found))
 
-info_file=`basename $info_path`
-if [[ -z "$info_file" ]]; then echo "info_file is empty"; exit 1; fi
-#echo "info_file is" $info_file
+$(call file_exists,$(info_path))
 
-prefix=$(echo $info_file | sed "s/_[0-9]*\..*\.info//;s/\..*\.info//")
-if [[ -z "$prefix" ]]; then echo "prefix is empty"; exit 1; fi
-#echo "prefix is" $prefix
+$(info * info_path=$(info_path))
 
-library_path=`dirname $info_path`
-#echo "library_path is" $library_path
+# by default it will use the folder where the info path is
+ifndef output_folder
+output_folder=$(dir $(info_path))
+else
+$(call mkdir -p $(output_folder))
+endif
+$(info * output_folder=$(output_folder))
 
-general_path=`dirname $library_path`
-#echo "general_path is" $general_path
+# optional parameter
+#
+db_file?=
 
-prefix_letters=`echo $prefix | sed "s/[0-9].*//"`
-if [[ -z "$prefix_letters" ]]; then echo "prefix_letters is empty"; exit 1; fi
 
-general_prefix=`echo $general_path | sed "s/.*$prefix_letters/$prefix_letters/"`
-#echo "general prefix is" $general_prefix
 
-output=$output_folder/$general_prefix/$prefix
+prefix=$(shell echo $(notdir $(info_path))|sed "s/.fastq.*info$$//")
+$(info * prefix=$(prefix))
 
-#echo "info_path" $info_path
-#echo "info_file" $info_file
-#echo "library_path" $library_path
-#echo "general_path" $general_path
-#echo "general_prefix" $general_prefix
-#echo "output" $output
 
-if [ ! -d $output_folder/$general_prefix ]; then
-	mkdir -p $output_folder/$general_prefix
-fi
+#
+# prefix
+lib=$(shell echo $(prefix)| sed "s/_[12]$$//")
+$(info * lib=$(lib))
 
-#> $output"_profile"
 
-generate_QC_profile.R $library_path $prefix $output"_profile"
+library_path=$(dir $(info_path))
+$(info * library_path=$(library_path))
 
-echo $prefix "profile generated"
-#echo "output is in" $output_folder/$general_prefix
-#echo
 
-exit
+output=$(output_folder)/$(prefix).qc_profile.tsv
+
+# TODOL update
+files_used_by_QC_profile=$(info_path) $(library_path)/$(lib).data_info.tsv $(library_path)/$(lib).f.fastqc.tsv $(library_path)
+$(output): $(files_used_by_QC_profile)
+	generate_QC_profile.R $(library_path) $(prefix) $@.tmp && mv $@.tmp $@ &&\
+	echo $prefix "profile generated"

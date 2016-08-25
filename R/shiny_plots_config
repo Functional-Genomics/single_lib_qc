@@ -7,3 +7,5 @@ fix_scat_nreads_mem NA  NA  NA  NA  NA  NA
 fix_scat_rs_mem NA  NA  NA  NA  NA  NA
 fix_scat_nreads_time NA  NA  NA  NA  NA  NA
 fix_scat_rs_time NA  NA  NA  NA  NA  NA
+fix_box_num_total NA  NA  NA  NA  NA  NA
+fix_box_per_total NA  NA  NA  NA  NA  NA
