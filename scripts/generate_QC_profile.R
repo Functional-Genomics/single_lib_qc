@@ -1,10 +1,14 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
+path_to_runs <- NULL
 path_to_directory <<- args[1] # path to folder (e.g. /.../SRR869/SRR869012/)
 prefix <<- args[2] # prefix of the library's files (e.g. SRR869012)
 output <<- args[3] # where to place the output (used in write.table)
-path_to_runs <<- args[4] # path to runs.tsv file
+if (length(args)>3)
+  path_to_runs <<- args[4] # path to runs.tsv file
+
+
 
 library(dtplyr) # seams dplyr and data.table
 suppressPackageStartupMessages(library(data.table))
@@ -22,12 +26,12 @@ if (length(args) < 3 || length(args) > 4) {
 
 # checking if some data was already uploaded
 if (exists("columns_to_keep") == F) columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
-if (exists("runs_df") == F) {
-  runs_df <<- data.table()
-  if (!is.na(args[4])) {
-    runs_df <<- fread(path_to_runs)
-    setkey(runs_df, Run)
-  }
+
+runs.df <- NULL
+if (!is.null(path_to_runs) ) {
+  cat("INFO: extra matrix provided",path_to_runs,"\n")
+  runs_df <<- fread(path_to_runs)
+  setkey(runs_df, Run)
 }
 
 # used functions----------------------------------------------------------------------------------------------------
@@ -315,14 +319,14 @@ TransposeWithNames <- function (data.frame) {
 AddMoreData <- function (profile, path_to_directory) {
   prefix <- profile$Prefix
   data_info_path <- list.files(path_to_directory, pattern = paste0(prefix, ".*\\.data_info.tsv$"), full.names = T)
-  
-  if (length(data_info_path) == 0) {
-    if (is.data.frame(runs_df) && nrow(runs_df)==0) {
-      columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
+  columns <- c("Annotation", "Species", "Study", "Genome", "Genome:size", "Genome:min.length", "Genome:max.length", "Genome:num.sequences", "Genome:mean.length",
                    "Genome:median.length", "Exons:size", "Exons:min.length", "Exons:max.length", "Exons:num.seqs",
                    "Exons:mean.length", "Exons:median.length", "Transcripts:size", "Transcripts:min.length", "Transcripts:max.length", "Transcripts:num.seqs",
                    "Transcripts:mean.length", "Transcripts:median.length", "Genes:size", "Genes:min.length", "Genes:max.length", "Genes:num.seqs",
                    "Genes:mean.length", "Genes:median.length")
+  if (length(data_info_path) == 0) {
+    if (is.data.frame(runs_df) && nrow(runs_df)==0) {
+      // empty df
       add_df <- data.table(matrix(ncol = length(columns), nrow = 1))
       colnames(add_df) <- columns
     } else {
