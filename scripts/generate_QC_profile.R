@@ -13,6 +13,7 @@ if (length(args)>3)
 library(dtplyr) # seams dplyr and data.table
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(library64))
 library(stringr)
 
 R_folder_path <<- Sys.getenv("QC_R_DIR")
@@ -27,11 +28,13 @@ if (length(args) < 3 || length(args) > 4) {
 # checking if some data was already uploaded
 columns_to_keep <<- fread(paste0(R_folder_path, "/columns_to_keep"), header = F, col.names = "Columns")
 
+# 
 runs_df <- NULL
 if (!is.null(path_to_runs) ) {
-  cat("INFO: extra matrix provided",path_to_runs,"\n")
-  runs_df <<- suppressWarnings(fread(path_to_runs))
-  setkey(runs_df, Run)
+    cat("INFO: extra matrix provided",path_to_runs,"\n")
+    #warnings are good
+    runs_df <<- fread(path_to_runs)
+    setkey(runs_df, "Run")
 }
 
 # used functions----------------------------------------------------------------------------------------------------
