@@ -252,7 +252,7 @@ GetTimeData <- function (reads_from_time) {
 
 # gets pipeline version
 GetVersionData <- function (df) {
-  df[df$V1 == "Pipeline"]
+  df <- df[df$V1 == "Pipeline"]
   df <- subset(df, select = c("V1", "V3"))
   colnames(df) <- c("V1", "V2")
   return(df)
