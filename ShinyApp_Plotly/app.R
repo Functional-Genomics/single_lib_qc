@@ -1,12 +1,25 @@
 #!/usr/bin/env Rscript
+
+
+R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
+config.path <- NULL
+default.config <- paste0(R_path, "/shiny_plots_config")
+
 args = commandArgs(trailingOnly=TRUE)
 
 matrix_path <- args[1] # path to extended matrix
+nargs <- length(args)
 
-if (length(args)!=1) {
-  cat("usage: <path_to_extended_matrix> \n")
+if (nargs<1&&nargs>2) {
+  cat("usage: <path_to_extended_matrix> [path2config file]\n")
   cat("ERROR: incorrect number of arguments\n");
   q(status=1);
+}
+
+if (nargs==2) {
+    config_path <- args[1] # path to extended matrix
+} else {
+    config.path <- default.config
 }
 
 library(dtplyr)
@@ -18,7 +31,6 @@ library(plotly)
 library(RColorBrewer)
 verbose <- TRUE
 
-R_path<<- Sys.getenv("QC_R_DIR") # path to the R folder
 
 # where should this file reside? R folder? or ShinyApp_Plotly/?
 source(paste0(R_path, "/create_stack_barplot.R")) # function to create stacked barplots
@@ -44,8 +56,8 @@ classes <<- fread(classes_file)
 cat("done.\n")
 setkey(classes, "Prefix")
 
-cat("Loading configuration...")
-config_table <- fread(paste0(R_path, "/shiny_plots_config"), na = c("NA", ""))
+cat("Loading configuration ",config.path,"...")
+config_table <- fread(config.path, na = c("NA", ""))
 setkey(config_table, "Name")
 cat("done.\n")
 
