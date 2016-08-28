@@ -62,141 +62,142 @@ setkey(config_table, "Name")
 cat("done.\n")
 
 ui <- navbarPage(
-  title = "QC profile explorer",
-  tabPanel("General Overview",
-           plotlyOutput("gen_plot"),
-           fluidRow(
-             column(width = 5, offset = 1,
-                    selectInput(inputId = "x", label = "X", choices = colnames(dataset))
+    title = "QC profile explorer",
+     tabPanel("Fixed Plots",
+             wellPanel(
+                 fluidRow(
+                     column(width = 5,
+                            selectInput(inputId = "fix_feat", label = "What group to investigate?", 
+                                        choices = c("ORGANISM", "STUDY_ID")
+                                        )
+                            ),
+                     column(width = 5, offset = 1,
+                            uiOutput("fix_val"))
+                 )
              ),
-             column(width = 5, offset = 1,
-                    selectInput(inputId = "y", label = "Y", choices = colnames(dataset))
-             )
-           ),
-           fluidRow(
-             column (width = 5, offset = 1,
-                     selectInput(inputId = "type", label = "Plot Type", choices = c("Linear", "Box Plot"))
-             )
-           )
-  ),
-  tabPanel("Fixed Plots",
-           wellPanel(
              fluidRow(
-               column(width = 5,
-                      selectInput(inputId = "fix_feat", label = "What group to investigate?", 
-                                  choices = c("ORGANISM", "STUDY_ID")
-                      )
-               ),
-               column(width = 5, offset = 1,
-                      uiOutput("fix_val"))
-             )
-           ),
-           fluidRow(
-             column(width = 5, 
-                    plotlyOutput("fix_box_num")),
-             column(width = 5, offset = 1,
-                    plotlyOutput("fix_box_per"))
-           ),
-           fluidRow(
-             column(width = 5, 
-                    plotlyOutput("fix_scat_rs_rmap")),
-             column(width = 5, offset = 1,
-                    plotlyOutput("fix_scat_rs_rsl"))
-           ),
-           fluidRow(
-             column(width = 5, 
-                    plotlyOutput("fix_scat_nreads_mem")),
-             column(width = 5, offset = 1,
-                    plotlyOutput("fix_scat_rs_mem"))
-           ),
-           fluidRow(
-             column(width = 5, 
-                    plotlyOutput("fix_scat_nreads_time")),
-             column(width = 5, offset = 1,
-                    plotlyOutput("fix_scat_rs_time"))
-           )
-  ),
-  # 3rd tab: information about single profiles 
-  tabPanel("Single QC Profile",
-           tabsetPanel(
-             tabPanel("Custom profile",
-                      fluidRow(
-                        column(3, 
-                               textInput("prof_usr", label = "Enter the prefix")),
-                        column(3,
-                               uiOutput("class")),
-                        column(3,
-                               actionButton("update_class", label = "Update Class")),
-                        column(3,
-                               actionButton("write_class", label = "Write Updated Classes"))),
-                      column(width = 4,
-                             tableOutput("single_prof_cust")),
-                      column(width = 7,
-                             plotlyOutput("sprof_cust_time"),
-                             plotlyOutput("sprof_cust_mem"))
+                 column(width = 5, 
+                        plotlyOutput("fix_box_num")),
+                 column(width = 5, offset = 1,
+                        plotlyOutput("fix_box_per"))
              ),
-             tabPanel("Profile from General overview",
-                      tabsetPanel(
-                        tabPanel("Boxplots",
-                                 column(width = 4, 
-                                        tableOutput("single_prof_gen_box")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_gen_box_time"),
-                                        plotlyOutput("sprof_gen_box_mem"))
+             fluidRow(
+                 column(width = 5, 
+                        plotlyOutput("fix_scat_rs_rmap")),
+                 column(width = 5, offset = 1,
+                        plotlyOutput("fix_scat_rs_rsl"))
+             ),
+             fluidRow(
+                 column(width = 5, 
+                        plotlyOutput("fix_scat_nreads_mem")),
+                 column(width = 5, offset = 1,
+                        plotlyOutput("fix_scat_rs_mem"))
+             ),
+             fluidRow(
+                 column(width = 5, 
+                        plotlyOutput("fix_scat_nreads_time")),
+                 column(width = 5, offset = 1,
+                        plotlyOutput("fix_scat_rs_time"))
+             )
+             ),
+    tabPanel("General Overview",
+             plotlyOutput("gen_plot"),
+             fluidRow(
+                 column(width = 5, offset = 1,
+                        selectInput(inputId = "x", label = "X", choices = colnames(dataset))
                         ),
-                        tabPanel("Scatterplots",
-                                 column(width = 4, 
-                                        tableOutput("single_prof_gen_scat")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_gen_scat_time"),
-                                        plotlyOutput("sprof_gen_scat_mem"))
+                 column(width = 5, offset = 1,
+                        selectInput(inputId = "y", label = "Y", choices = colnames(dataset))
                         )
-                      )
              ),
-             tabPanel("Profile from Fixed Plots",
-                      tabsetPanel(
-                        tabPanel("Boxplots",
-                                 column(width = 4,
-                                        tableOutput("single_prof_fix_box")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_fix_box_time"),
-                                        plotlyOutput("sprof_fix_box_mem"))
-                        ),
-                        tabPanel("Scatterplots",
-                                 column(width = 4,
-                                        tableOutput("single_prof_fix_scat")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_fix_scat_time"),
-                                        plotlyOutput("sprof_fix_scat_mem"))
-                        )
-                      )
+             fluidRow(
+                 column (width = 5, offset = 1,
+                         selectInput(inputId = "type", label = "Plot Type", choices = c("Linear", "Box Plot"))
+                         )
              )
-           )
-  ),
-  tabPanel("Execution Time/Memory",
-           tabsetPanel(
-             tabPanel("Time",
-                      fluidRow(
-                        column(width = 5, 
-                               plotlyOutput("box_study_time_sum"),
-                               plotlyOutput("box_spic_time_sum"),
-                               plotlyOutput("box_rs_time_sum")),
-                        column(width = 5, offset = 1
-                        )
-                      )   
+             ),    
+    # 3rd tab: information about single profiles 
+    tabPanel("Single QC Profile",
+             tabsetPanel(
+                 tabPanel("Custom profile",
+                          fluidRow(
+                              column(3, 
+                                     textInput("prof_usr", label = "Enter the prefix")),
+                              column(3,
+                                     uiOutput("class")),
+                              column(3,
+                                     actionButton("update_class", label = "Update Class")),
+                              column(3,
+                                     actionButton("write_class", label = "Write Updated Classes"))),
+                          column(width = 4,
+                                 tableOutput("single_prof_cust")),
+                          column(width = 7,
+                                 plotlyOutput("sprof_cust_time"),
+                                 plotlyOutput("sprof_cust_mem"))
+                          ),
+                 tabPanel("Profile from General overview",
+                          tabsetPanel(
+                              tabPanel("Boxplots",
+                                       column(width = 4, 
+                                              tableOutput("single_prof_gen_box")),
+                                       column(width = 7,
+                                              plotlyOutput("sprof_gen_box_time"),
+                                              plotlyOutput("sprof_gen_box_mem"))
+                                       ),
+                              tabPanel("Scatterplots",
+                                       column(width = 4, 
+                                              tableOutput("single_prof_gen_scat")),
+                                       column(width = 7,
+                                              plotlyOutput("sprof_gen_scat_time"),
+                                              plotlyOutput("sprof_gen_scat_mem"))
+                                       )
+                          )
+                          ),
+                 tabPanel("Profile from Fixed Plots",
+                          tabsetPanel(
+                              tabPanel("Boxplots",
+                                       column(width = 4,
+                                              tableOutput("single_prof_fix_box")),
+                                       column(width = 7,
+                                              plotlyOutput("sprof_fix_box_time"),
+                                              plotlyOutput("sprof_fix_box_mem"))
+                                       ),
+                              tabPanel("Scatterplots",
+                                       column(width = 4,
+                                              tableOutput("single_prof_fix_scat")),
+                                       column(width = 7,
+                                              plotlyOutput("sprof_fix_scat_time"),
+                                              plotlyOutput("sprof_fix_scat_mem"))
+                                       )
+                          )
+                          )
+             )
              ),
-             tabPanel("Memory",
-                      fluidRow(
-                        column(width = 5, 
-                               plotlyOutput("box_study_mem"),
-                               plotlyOutput("box_spic_mem"),
-                               plotlyOutput("box_rs_mem")),
-                        column(width = 5, offset = 1
-                        )
-                      ) 
+    tabPanel("Execution Time/Memory",
+             tabsetPanel(
+                 tabPanel("Time",
+                          fluidRow(
+                              column(width = 5, 
+                                     plotlyOutput("box_study_time_sum"),
+                                     plotlyOutput("box_spic_time_sum"),
+                                     plotlyOutput("box_rs_time_sum")),
+                              column(width = 5, offset = 1
+                                     )
+                          )   
+                          ),
+                 tabPanel("Memory",
+                          fluidRow(
+                              column(width = 5, 
+                                     plotlyOutput("box_study_mem"),
+                                     plotlyOutput("box_spic_mem"),
+                                     plotlyOutput("box_rs_mem")),
+                              column(width = 5, offset = 1
+                                     )
+                          ) 
+                          )
              )
-           )
-  )
+             )
+    
 )
 
 server <- function(input, output) {
