@@ -34,12 +34,12 @@ verbose <- TRUE
 
 # these files reside in R folder
 source(paste0(R_path, "/create_stack_barplot.R")) # function to create stacked barplots
-source(paste0(R_path, "create_stack_barplot_aggregated.R")) # function to create AGGREGATED stacked barplots
+source(paste0(R_path, "/create_stack_barplot_aggregated.R")) # function to create AGGREGATED stacked barplots
 source(paste0(R_path, "/transpose_profile.R")) # function to output single QC profile vertically
 source(paste0(R_path, "/check_classes_file.R")) # function to check if "classes" file exits and, if not, create one
 source(paste0(R_path, "/determine_profile_class.R")) # function to determine the class of a given profile from the "classes" file mapping
-source(paste0(R_path, "create_stats_matrix.R")) # function to create matrix with means by id's
-source(paste0(R_path, "create_data_for_boxplot.R")) # function to create appropriate datasets for boxplots 
+source(paste0(R_path, "/create_stats_matrix.R")) # function to create matrix with means by id's
+source(paste0(R_path, "/create_data_for_boxplot.R")) # function to create appropriate datasets for boxplots 
 
 
 
