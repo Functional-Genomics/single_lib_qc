@@ -47,7 +47,7 @@ create_stack_barplot_sprof <- function (Prefix, dataset, feature_type) {
                      type = "bar", orientation = "h", name = gsub("TIME_iRAP_|TIME_", "", memory_type),
                      marker = list(color = color_now), legendgroup = memory_type,
                      evaluate = T) %>%
-        layout(xaxis = list(title = "Memory, MB"),
+        layout(xaxis = list(title = "Memory, GB"),
                yaxis = list(title = ""),
                barmode = "stack")
       

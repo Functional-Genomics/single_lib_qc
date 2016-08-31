@@ -8,7 +8,6 @@ create_stack_barplot_agg <- function (stats_matrix, feature_type, value_type, st
   if (feature_type == "MEMORY") columns <- grep(paste0("TIME", "_.*_memory_", value_type), colnames(stats_matrix), value = T)
 
   group <- stats_matrix[, c(colnames(stats_matrix)[1], columns), with = F]
-  replace_na(group)
   setkeyv(group, colnames(group)[1])
   
   colors = brewer.pal(length(colnames(group)), "Paired")
@@ -32,9 +31,9 @@ create_stack_barplot_agg <- function (stats_matrix, feature_type, value_type, st
   return(p)
 }
 
-# function that replaces NA with 0 in data table
-replace_na <- function(DT) {
-  for (i in names(DT))
-    DT[is.na(get(i)), i:=0, with=FALSE]
-}
+# # function that replaces NA with 0 in data table
+# replace_na <- function(DT) {
+#   for (i in names(DT))
+#     DT[is.na(get(i)), i:=0, with=FALSE]
+# }
 

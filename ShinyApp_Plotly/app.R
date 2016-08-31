@@ -9,16 +9,16 @@ args = commandArgs(trailingOnly=TRUE)
 matrix_path <- args[1] # path to extended matrix
 nargs <- length(args)
 
-if (nargs<1&&nargs>2) {
-  cat("usage: <path_to_extended_matrix> [path2config file]\n")
+if (nargs<1&&nargs>3) {
+  cat("usage: <path_to_extended_matrix> [path_to_config_file] [filter]\n")
   cat("ERROR: incorrect number of arguments\n");
   q(status=1);
 }
 
-if (nargs==2) {
-    config_path <- args[1] # path to extended matrix
+if (args[2] == "none") {
+  config.path <- default.config
 } else {
-    config.path <- default.config
+  config_path <- args[2] # path to config file
 }
 
 library(dtplyr)
@@ -51,6 +51,10 @@ cat("Loading matrix ",matrix_path,"...")
 suppressWarnings(dataset <- fread(matrix_path, na = c("NA", "")))
 cat("done.\n")
 
+if (args[3] != "none") {
+  filter <- args[3]
+  dataset <- subset(dataset, KINGDOM == filter)
+}
 
 setkey(dataset, Prefix)
 
@@ -76,6 +80,22 @@ for (feature in cols ) {
 }
 cat("Computing mapping percentages...done.")
 
+# converting memory from kB to GB
+cat("Converting memory from kB to GB...")
+memory_cols <- grep(".*_memory.*", colnames(dataset), value = T)
+dataset[, memory_cols] <- dataset[, memory_cols, with = F]/(1024*1024) 
+cat("Converting memory from kB to GB...done.")
+
+# precomputing data table with data about number of libraries for each species
+dt <- copy(dataset)
+values <- unique(dt$ORGANISM)
+setkeyv(dt, "ORGANISM")
+quant <- vector()
+for (val in values) {
+  quant <- c(quant, length(dt[val, ]$Prefix))
+}
+org_dt <- data.table("ORGANISM" = values, "Number_of_libs" = quant)
+
 ui <- navbarPage(
   title = "QC profile explorer",
   # 2nd tab: some fixed plots
@@ -93,11 +113,16 @@ ui <- navbarPage(
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("fix_box_num"),
-                    plotlyOutput("fix_box_per")),
-             column(width = 5, offset = 1,
+                    plotlyOutput("fix_scat_lib_org")),
+             column(width = 5, offset = 1)
+           ),
+           fluidRow(
+             column(width = 5, 
                     plotlyOutput("fix_box_num_total"),
-                    plotlyOutput("fix_box_per_total"))
+                    plotlyOutput("fix_box_num")),
+             column(width = 5, offset = 1,
+                    plotlyOutput("fix_box_per_total"),
+                    plotlyOutput("fix_box_per"))
            ),
            fluidRow(
              column(width = 5, 
@@ -155,40 +180,19 @@ ui <- navbarPage(
                              plotlyOutput("sprof_cust_mem"))
              ),
              tabPanel("Profile from General overview",
-                      tabsetPanel(
-                        tabPanel("Boxplots",
-                                 column(width = 4, 
-                                        tableOutput("single_prof_gen_box")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_gen_box_time"),
-                                        plotlyOutput("sprof_gen_box_mem"))
-                        ),
-                        tabPanel("Scatterplots",
-                                 column(width = 4, 
-                                        tableOutput("single_prof_gen_scat")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_gen_scat_time"),
-                                        plotlyOutput("sprof_gen_scat_mem"))
-                        )
-                      )
+                      column(width = 4, 
+                             tableOutput("single_prof_gen")),
+                      column(width = 7,
+                             plotlyOutput("sprof_gen_time"),
+                             plotlyOutput("sprof_gen_mem"))
              ),
+             
              tabPanel("Profile from Fixed Plots",
-                      tabsetPanel(
-                        tabPanel("Boxplots",
-                                 column(width = 4,
-                                        tableOutput("single_prof_fix_box")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_fix_box_time"),
-                                        plotlyOutput("sprof_fix_box_mem"))
-                        ),
-                        tabPanel("Scatterplots",
-                                 column(width = 4,
-                                        tableOutput("single_prof_fix_scat")),
-                                 column(width = 7,
-                                        plotlyOutput("sprof_fix_scat_time"),
-                                        plotlyOutput("sprof_fix_scat_mem"))
-                        )
-                      )
+                      column(width = 4, 
+                             tableOutput("single_prof_fix")),
+                      column(width = 7,
+                             plotlyOutput("sprof_fix_time"),
+                             plotlyOutput("sprof_fix_mem"))
              )
            )
   ),
@@ -203,6 +207,10 @@ ui <- navbarPage(
            tabsetPanel(
              tabPanel("Time",
                       fluidRow(
+                        column(width = 5, offset = 8,
+                               selectInput("total_time_type", label = "What type of data to plot?", choices = c("sum", "max", "last")))
+                      ),
+                      fluidRow(
                         column(width = 5, 
                                plotlyOutput("total_box_study_time_sum"),
                                plotlyOutput("total_box_spic_time_sum"),
@@ -215,6 +223,10 @@ ui <- navbarPage(
                       )   
              ),
              tabPanel("Memory",
+                      fluidRow(
+                        column(width = 5, offset = 8,
+                               selectInput("total_mem_type", label = "What type of data to plot?", choices = c("max", "last")))
+                      ),
                       fluidRow(
                         column(width = 5, 
                                plotlyOutput("total_box_study_mem"),
@@ -241,7 +253,7 @@ server <- function(input, output) {
     if (input$type == "Linear") {
       plot_ly(plot_df, x = x, y = y,
               type = "scatter", mode = "markers", text = Prefix, 
-              source = "point_gen_scat")%>%
+              source = "point_gen")%>%
         layout (xaxis = list(title = "",
                              tickangle = 45), 
                 yaxis = list(title = "",
@@ -251,7 +263,7 @@ server <- function(input, output) {
     } else if (input$type == "Box Plot") {
       plot_ly(data = plot_df, x = x, y = y,
               type = "scatter", mode = "markers", text = Prefix, name = "Points",
-              source = "point_gen_box") %>%
+              source = "point_gen") %>%
         add_trace(data = plot_df, x = x, y = y,
                   type = "box", orientation = "h", name = "Distribution") %>%
         layout (xaxis = list(title = "",
@@ -269,6 +281,19 @@ server <- function(input, output) {
   output$fix_val <- renderUI({
     selectInput(inputId = "fix_val", label = "What value from this group?", 
                 choices = unique(dataset[, get(input$fix_feat)]))
+  })
+  # plot that shows number of libraries from fore each ORGANISM
+  output$fix_scat_lib_org <- renderPlotly({
+    config <- config_table["fix_scat_rs_rmap", ]
+    plot_ly(data = org_dt, x = Number_of_libs, y = ORGANISM,
+            type = "scatter", mode = "markers") %>%
+      layout(xaxis = list(title = "Number of libraries",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)),
+             margin = list(l = 150))
   })
   # preparing data for "numeric" PLOTLY box plot
   plot_data_num <- reactive({
@@ -399,7 +424,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Number of reads",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Mapping Memory, MB",
+             yaxis = list(title = "Mapping Memory, GB",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
@@ -410,7 +435,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Mapping Memory, MB",
+             yaxis = list(title = "Mapping Memory, GB",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
@@ -468,92 +493,64 @@ server <- function(input, output) {
   })
   
   
-  # data and plots of profile from General Overview tab (boxplots)
-  prefix_gen_box <- reactive({
-    point_data <- event_data("plotly_click", source = "point_gen_box")
+  # data and plots of profile from General Overview tab 
+  prefix_gen <- reactive({
+    point_data <- event_data("plotly_click", source = "point_gen")
     if(is.null(point_data) == T) 
       return(NULL)
-    prefix_gen_box <-  dataset$Prefix[point_data[[2]] + 1]
-    return(prefix_gen_box)
+    prefix_gen <-  dataset$Prefix[point_data[[2]] + 1]
   })
-  output$sprof_gen_box_time <- renderPlotly({
-    create_stack_barplot_sprof(prefix_gen_box(), dataset, "TIME")
+  output$sprof_gen_time <- renderPlotly({
+    create_stack_barplot_sprof(prefix_gen(), dataset, "TIME")
   })
-  output$sprof_gen_box_mem <- renderPlotly({
-    create_stack_barplot_sprof(prefix_gen_box(), dataset, "MEMORY")
+  output$sprof_gen_mem <- renderPlotly({
+    create_stack_barplot_sprof(prefix_gen(), dataset, "MEMORY")
   })
-  profile_gen_box <- reactive({
-    profile <- dataset[prefix_gen_box(), ]
+  profile_gen <- reactive({
+    profile <- dataset[prefix_gen(), ]
     return(profile)
   })
-  output$single_prof_gen_box <- renderTable({
-    transpose_profile(profile_gen_box())
-  })
-  # data and plots of profile from General Overview tab (scatterplots)
-  prefix_gen_scat <- reactive({
-    point_data <- event_data("plotly_click", source = "point_gen_scat")
-    if(is.null(point_data) == T) 
-      return(NULL)
-    prefix_gen_scat <-  dataset$Prefix[point_data[[2]] + 1]
-    return(prefix_gen_scat)
-  })
-  output$sprof_gen_scat_time <- renderPlotly({
-    create_stack_barplot_sprof(prefix_gen_scat(), dataset, "TIME")
-  })
-  output$sprof_gen_scat_mem <- renderPlotly({
-    create_stack_barplot_sprof(prefix_gen_scat(), dataset, "MEMORY")
-  })
-  profile_gen_scat <- reactive({
-    profile <- dataset[prefix_gen_scat(), ]
-    return(profile)
-  })
-  output$single_prof_gen_scat <- renderTable({
-    transpose_profile(profile_gen_scat())
+  output$single_prof_gen <- renderTable({
+    transpose_profile(profile_gen())
   })
   
   
-  # data and plots of profile from Fixed Plots tab (boxplots)
+  # data and plots of profile from Fixed Plots tab 
   prefix_fix_box <- reactive({
     point_data <- event_data("plotly_click", source = "point_fix_box")
     if(is.null(point_data) == T) 
       return(NULL)
-    prefix_fix_box <-  plot_data_num()$Prefix[point_data[[2]] + 1]
+    prefix_fix_box <- plot_data_num()$Prefix[point_data[[2]] + 1]
     return(prefix_fix_box)
   })
-  output$sprof_fix_box_time <- renderPlotly({
-    create_stack_barplot_sprof(prefix_fix_box(), dataset, "TIME")
-  })
-  output$sprof_fix_box_mem <- renderPlotly({
-    create_stack_barplot_sprof(prefix_fix_box(), dataset, "MEMORY")
-  })
-  profile_fix_box <- reactive({
-    profile <- dataset[prefix_fix_box(), ]
-    return(profile)
-  })
-  output$single_prof_fix_box <- renderTable({
-    transpose_profile(profile_fix_box())
-  })
-  # data and plots of profile from Fixed Plots tab (scatterplots)
   prefix_fix_scat <- reactive({
     point_data <- event_data("plotly_click", source = "point_fix_scat")
     if(is.null(point_data) == T)
       return(NULL)
-    prefix_fix_scat <-  scat_data()$Prefix[point_data[[2]] + 1]
+    prefix_fix_scat <- scat_data()$Prefix[point_data[[2]] + 1]
     return(prefix_fix_scat)
   })
-  output$sprof_fix_scat_time <- renderPlotly({
-    create_stack_barplot_sprof(prefix_fix_scat(), dataset, "TIME")
+  prefixes <- reactiveValues(prefix_fix = NULL)
+  observeEvent(prefix_fix_box(), {
+    prefixes$prefix_fix <- prefix_fix_box()
   })
-  output$sprof_fix_scat_mem <- renderPlotly({
-    create_stack_barplot_sprof(prefix_fix_scat(), dataset, "MEMORY")
+  observeEvent(prefix_fix_scat(), {
+    prefixes$prefix_fix <- prefix_fix_scat()
   })
-  profile_fix_scat <- reactive({
-    profile <- dataset[prefix_fix_scat(), ]
+  output$sprof_fix_time <- renderPlotly({
+    create_stack_barplot_sprof(prefixes$prefix_fix, dataset, "TIME")
+  })
+  output$sprof_fix_mem <- renderPlotly({
+    create_stack_barplot_sprof(prefixes$prefix_fix, dataset, "MEMORY")
+  })
+  profile_fix <- reactive({
+    profile <- dataset[prefixes$prefix_fix, ]
     return(profile)
   })
-  output$single_prof_fix_scat <- renderTable({
-    transpose_profile(profile_fix_scat())
+  output$single_prof_fix <- renderTable({
+    transpose_profile(profile_fix())
   })
+  
   
   # ------------------------------------------------------------------------------------
   # the 4th tab: table with means by STUDY ID or ORGANISM
@@ -609,15 +606,15 @@ server <- function(input, output) {
   })
   output$total_bar_time_sum_mean <- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", mean)
-    create_stack_barplot_agg(stats_matrix, "TIME", "sum", "mean")
+    create_stack_barplot_agg(stats_matrix, "TIME", input$total_time_type, "mean")
   })
   output$total_bar_time_sum_median <- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", median)
-    create_stack_barplot_agg(stats_matrix, "TIME", "sum", "median")
+    create_stack_barplot_agg(stats_matrix, "TIME", input$total_time_type, "median")
   })
   output$total_bar_time_sum_sd <- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", sd)
-    create_stack_barplot_agg(stats_matrix, "TIME", "sum", "sd")
+    create_stack_barplot_agg(stats_matrix, "TIME", input$total_time_type, "sd")
   })
   
   # Memory subtab
@@ -648,16 +645,17 @@ server <- function(input, output) {
   })
   output$total_bar_mem_max_mean<- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", mean)
-    create_stack_barplot_agg(stats_matrix, "MEMORY", "max", "mean")
+    create_stack_barplot_agg(stats_matrix, "MEMORY", input$total_mem_type, "mean")
   })
   output$total_bar_mem_max_median <- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", median)
-    create_stack_barplot_agg(stats_matrix, "MEMORY", "max", "median")
+    create_stack_barplot_agg(stats_matrix, "MEMORY", input$total_mem_type, "median")
   })
   output$total_bar_mem_max_sd <- renderPlotly({
     stats_matrix <- create_stats_matrix(dataset, "ORGANISM", sd)
-    create_stack_barplot_agg(stats_matrix, "MEMORY", "max", "sd")
+    create_stack_barplot_agg(stats_matrix, "MEMORY", input$total_mem_type, "sd")
   })
 }
 
 shinyApp(ui = ui, server = server)
+
