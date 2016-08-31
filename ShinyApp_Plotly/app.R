@@ -33,7 +33,7 @@ verbose <- TRUE
 
 
 # these files reside in R folder
-source(paste0(R_path, "/create_stack_barplot.R")) # function to create stacked barplots
+source(paste0(R_path, "/create_stack_barplot_sprof.R")) # function to create stacked barplots
 source(paste0(R_path, "/create_stack_barplot_aggregated.R")) # function to create AGGREGATED stacked barplots
 source(paste0(R_path, "/transpose_profile.R")) # function to output single QC profile vertically
 source(paste0(R_path, "/check_classes_file.R")) # function to check if "classes" file exits and, if not, create one
