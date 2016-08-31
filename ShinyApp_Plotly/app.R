@@ -419,7 +419,7 @@ server <- function(input, output) {
   })
   output$fix_scat_nreads_mem <- renderPlotly({
     config <- config_table["fix_scat_nreads_mem", ]
-    plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_iRAP_Mapping_memory_last,
+    plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_iRAP_Mapping_memory_max,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Number of reads",
                           type = config$X_type,
@@ -430,7 +430,7 @@ server <- function(input, output) {
   })
   output$fix_scat_rs_mem <- renderPlotly({
     config <- config_table["fix_scat_rs_mem", ]
-    plot_ly(data = scat_data(), x = INFO_rs, y = TIME_iRAP_Mapping_memory_last,
+    plot_ly(data = scat_data(), x = INFO_rs, y = TIME_iRAP_Mapping_memory_max,
             type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
