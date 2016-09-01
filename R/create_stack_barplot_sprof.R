@@ -3,7 +3,7 @@ create_stack_barplot_sprof <- function (Prefix, dataset, feature_type) {
   
   if (feature_type == "TIME") {
     profile <- profile[, grep("TIME_.*", colnames(profile), value = T), with = F]
-    profile <- profile[, -grep("TIME_.*_memory_.*|TIME_sum", colnames(profile), value = T), with = F]
+    profile <- profile[, -grep("TIME_.*_memory_.*|TIME_sum|TIME_.*_date_", colnames(profile), value = T), with = F]
     
     time_types <- unique(gsub("_last$|_max$|_sum$", "", colnames(profile)))
     value_types <- c("last", "max", "sum")
