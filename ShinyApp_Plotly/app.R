@@ -622,24 +622,24 @@ server <- function(input, output) {
     dataset[, c("Prefix", "INFO_rs", "INFO_nreads", "TIME_iRAP_Mapping_memory_last", "STUDY_ID", "ORGANISM"), with = F]
   })
   output$total_box_study_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_last, y = STUDY_ID,
+    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = STUDY_ID,
             color = STUDY_ID, type = "box", orientation = "h",
             showlegend = F) %>%
-      layout(xaxis = list(title = "Mapping Memory (last), MB"),
+      layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "Study ID"),
              margin = list(l = 200))
   })
   output$total_box_spic_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_last, y = ORGANISM,
+    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = ORGANISM,
             color = ORGANISM, type = "box", orientation = "h") %>%
-      layout(xaxis = list(title = "Mapping Memory (last), MB"),
+      layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "ORGANISM"),
              margin = list(l = 250))
   })
   output$total_box_rs_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_last, y = INFO_rs,
+    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = INFO_rs,
             color = ORGANISM, type = "box", orientation = "h") %>%
-      layout(xaxis = list(title = "Mapping Memory (last), MB"),
+      layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "Read Size, bases"),
              margin = list(l = 200))
   })
