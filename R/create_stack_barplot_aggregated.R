@@ -4,8 +4,10 @@ create_stack_barplot_agg <- function (stats_matrix, feature_type, value_type, st
   # value_type: sum, last or max
   # stats_type: "mean", "median", "sd"
   
-  if (feature_type == "TIME") columns <- grep(paste0("TIME", "_.*_", value_type), colnames(stats_matrix), value = T)
-  if (feature_type == "MEMORY") columns <- grep(paste0("TIME", "_.*_memory_", value_type), colnames(stats_matrix), value = T)
+  if (feature_type == "TIME") 
+    columns <- grep(paste0("^TIME", "_[^memory]*_", value_type), colnames(stats_matrix), value = T)
+  if (feature_type == "MEMORY") 
+    columns <- grep(paste0("TIME", "_.*_memory_", value_type), colnames(stats_matrix), value = T)
 
   group <- stats_matrix[, c(colnames(stats_matrix)[1], columns), with = F]
   setkeyv(group, colnames(group)[1])

@@ -639,7 +639,7 @@ server <- function(input, output) {
   
   # Memory subtab
   box_data_mem <- reactive({ 
-    dataset[, c("Prefix", "INFO_rs", "INFO_nreads", "TIME_iRAP_Mapping_memory_last", "STUDY_ID", "ORGANISM"), with = F]
+    dataset[, c("Prefix", "INFO_rs", "INFO_nreads", "TIME_iRAP_Mapping_memory_max", "STUDY_ID", "ORGANISM"), with = F]
   })
   output$total_box_study_mem <- renderPlotly({
     plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = STUDY_ID,
