@@ -1,5 +1,6 @@
 Name  X_Type Y_type  X_min X_max Y_min Y_max
 fix_scat_lib_org  NA  NA  NA  NA  NA  NA
+fix_scat_lib_org_single NA  NA  NA  NA  NA  NA
 fix_box_num  NA  NA  NA  NA  NA  NA
 fix_box_per  NA  NA  NA  NA  NA  NA
 fix_scat_rs_rmap  NA  NA  NA  NA  NA  NA

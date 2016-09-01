@@ -113,11 +113,6 @@ ui <- navbarPage(
            ),
            fluidRow(
              column(width = 5, 
-                    plotlyOutput("fix_scat_lib_org")),
-             column(width = 5, offset = 1)
-           ),
-           fluidRow(
-             column(width = 5, 
                     plotlyOutput("fix_box_num_total"),
                     plotlyOutput("fix_box_num")),
              column(width = 5, offset = 1,
@@ -141,6 +136,12 @@ ui <- navbarPage(
                     plotlyOutput("fix_scat_nreads_time")),
              column(width = 5, offset = 1,
                     plotlyOutput("fix_scat_rs_time"))
+           ),
+           fluidRow(
+             column(width = 5, 
+                    plotlyOutput("fix_scat_lib_org")),
+             column(width = 5, offset = 1,
+                    plotlyOutput("fix_scat_lib_org_single"))
            )
   ),
   # 1st tab: general plot with flexible axis
@@ -282,9 +283,28 @@ server <- function(input, output) {
     selectInput(inputId = "fix_val", label = "What value from this group?", 
                 choices = unique(dataset[, get(input$fix_feat)]))
   })
+  single_data <- reactive({
+    if (input$fix_feat == "ORGANISM")
+      single_data <- subset(org_dt, ORGANISM == input$fix_val)
+    else 
+      single_data <- NULL
+    return(single_data)
+  })
+  output$fix_scat_lib_org_single <- renderPlotly({
+    config <- config_table["fix_scat_lib_org_single", ]
+    plot_ly(data = single_data(), x = Number_of_libs, y = ORGANISM,
+            type = "scatter", mode = "markers") %>%
+      layout(xaxis = list(title = "Number of libraries",
+                          type = config$X_type,
+                          range = c(config$X_min, config$X_max)),
+             yaxis = list(title = "",
+                          type = config$Y_type,
+                          range = c(config$Y_min, config$Y_max)),
+             margin = list(l = 150))
+  })
   # plot that shows number of libraries from fore each ORGANISM
   output$fix_scat_lib_org <- renderPlotly({
-    config <- config_table["fix_scat_rs_rmap", ]
+    config <- config_table["fix_scat_lib_org", ]
     plot_ly(data = org_dt, x = Number_of_libs, y = ORGANISM,
             type = "scatter", mode = "markers") %>%
       layout(xaxis = list(title = "Number of libraries",
@@ -424,7 +444,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Number of reads",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Mapping Memory, GB",
+             yaxis = list(title = "Mapping Memory (max), GB",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
@@ -435,7 +455,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Mapping Memory, GB",
+             yaxis = list(title = "Mapping Memory (max), GB",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
@@ -446,7 +466,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Number of Reads",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Time, min",
+             yaxis = list(title = "Time_sum, min",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
@@ -457,7 +477,7 @@ server <- function(input, output) {
       layout(xaxis = list(title = "Read Size",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
-             yaxis = list(title = "Time, min",
+             yaxis = list(title = "Time_sum, min",
                           type = config$Y_type,
                           range = c(config$Y_min, config$Y_max)))
   })
