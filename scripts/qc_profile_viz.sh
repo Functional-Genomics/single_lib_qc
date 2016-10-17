@@ -13,11 +13,13 @@ fi
 INPUT_FILE=
 CONFIG_FILE=none
 FILTER=none
-while getopts "i:c:f:"  Option
+IP=127.0.0.1
+while getopts "i:c:f:s:"  Option
 do
    case $Option in
     i ) INPUT_FILE=$OPTARG;;
     c ) CONFIG_FILE=$OPTARG;;
+    s ) IP=$OPTARG;;
     f ) FILTER=$OPTARG;;
    esac
 done
@@ -40,5 +42,5 @@ if [ "$INPUT_FILE-" == "-" ]; then
 else
    path_to_matrix=`readlink -f $INPUT_FILE`
 fi
-Rscript -e "library(methods); shiny::runApp('$path_to_shiny', launch.browser=TRUE)" $path_to_matrix $CONFIG_FILE $FILTER
+Rscript -e "library(methods); shiny::runApp('$path_to_shiny', launch.browser=TRUE, host='$IP')" $path_to_matrix $CONFIG_FILE $FILTER
 exit 0
