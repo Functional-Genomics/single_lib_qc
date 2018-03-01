@@ -252,8 +252,8 @@ server <- function(input, output) {
                           dataset[, "Prefix", with = F])
     colnames(plot_df) <- c("x", "y", "Prefix")
     if (input$type == "Linear") {
-      plot_ly(plot_df, x = x, y = y,
-              type = "scatter", mode = "markers", text = Prefix, 
+      plot_ly(plot_df, x = ~x, y = ~y,
+              type = "scatter", mode = "markers", text = ~Prefix, 
               source = "point_gen")%>%
         layout (xaxis = list(title = "",
                              tickangle = 45), 
@@ -262,10 +262,10 @@ server <- function(input, output) {
                 margin = list(b = 100,
                               l = 80)) 
     } else if (input$type == "Box Plot") {
-      plot_ly(data = plot_df, x = x, y = y,
-              type = "scatter", mode = "markers", text = Prefix, name = "Points",
+      plot_ly(data = plot_df, x = ~x, y = ~y,
+              type = "scatter", mode = "markers", text = ~Prefix, name = "Points",
               source = "point_gen") %>%
-        add_trace(data = plot_df, x = x, y = y,
+        add_trace(data = plot_df, x = ~x, y = ~y,
                   type = "box", orientation = "h", name = "Distribution") %>%
         layout (xaxis = list(title = "",
                              tickangle = 45), 
@@ -292,7 +292,7 @@ server <- function(input, output) {
   })
   output$fix_scat_lib_org_single <- renderPlotly({
     config <- config_table["fix_scat_lib_org_single", ]
-    plot_ly(data = single_data(), x = Number_of_libs, y = ORGANISM,
+    plot_ly(data = single_data(), x = ~Number_of_libs, y = ~ORGANISM,
             type = "scatter", mode = "markers") %>%
       layout(xaxis = list(title = "Number of libraries",
                           type = config$X_type,
@@ -305,7 +305,7 @@ server <- function(input, output) {
   # plot that shows number of libraries from fore each ORGANISM
   output$fix_scat_lib_org <- renderPlotly({
     config <- config_table["fix_scat_lib_org", ]
-    plot_ly(data = org_dt, x = Number_of_libs, y = ORGANISM,
+    plot_ly(data = org_dt, x = ~Number_of_libs, y = ~ORGANISM,
             type = "scatter", mode = "markers") %>%
       layout(xaxis = list(title = "Number of libraries",
                           type = config$X_type,
@@ -332,10 +332,10 @@ server <- function(input, output) {
   output$fix_box_num <- renderPlotly({
     config <- config_table["fix_box_num", ]
     y_names <- unique(gsub(".*_", "", plot_data_num()$Feature))
-    plot_ly(plot_data_num(), x = Value, y = Feature,
-            type = "scatter", mode = "markers", text = Prefix, name = "Points",
+    plot_ly(plot_data_num(), x = ~Value, y = ~Feature,
+            type = "scatter", mode = "markers", text = ~Prefix, name = "Points",
             source = "point_fix_box") %>%
-      add_trace(data = plot_data_num(), x = Value, y = Feature,
+      add_trace(data = plot_data_num(), x = ~Value, y = ~Feature,
                 type = "box", orientation = "h", name = "Distribution") %>%
       layout(yaxis = list(title = input$fix_val,
                           tickangle = 25,
@@ -352,10 +352,10 @@ server <- function(input, output) {
   output$fix_box_num_total <- renderPlotly({
     config <- config_table["fix_box_num_total", ]
     y_names <- unique(gsub(".*_", "", plot_data_num_total()$Feature))
-    plot_ly(plot_data_num_total(), x = Value, y = Feature,
+    plot_ly(plot_data_num_total(), x = ~Value, y = ~Feature,
             type = "scatter", mode = "markers", text = plot_data_num_total()[[input$fix_feat]], name = "Points",
             source = "point_fix_box_total") %>%
-      add_trace(data = plot_data_num_total(), x = Value, y = Feature,
+      add_trace(data = plot_data_num_total(), x = ~Value, y = ~Feature,
                 type = "box", orientation = "h", name = "Distribution") %>%
       layout(yaxis = list(title = paste("All", input$fix_feat),
                           tickangle = 25,
@@ -372,10 +372,10 @@ server <- function(input, output) {
   output$fix_box_per <- renderPlotly({
     config <- config_table["fix_box_per", ]
     y_names <- unique(gsub(".*_", "perc", plot_data_per()$Feature))
-    plot_ly(plot_data_per(), x = Value, y = Feature,
-            type = "scatter", mode = "markers", text = Prefix, name = "Points",
+    plot_ly(plot_data_per(), x = ~Value, y = ~Feature,
+            type = "scatter", mode = "markers", text = ~Prefix, name = "Points",
             source = "point_fix_box") %>%
-      add_trace(data = plot_data_per(), x = Value, y = Feature,
+      add_trace(data = plot_data_per(), x = ~Value, y = ~Feature,
                 type = "box", orientation = "h", name = "Distribution") %>%
       layout(yaxis = list(title = input$fix_val,
                           tickangle = 25,
@@ -392,10 +392,10 @@ server <- function(input, output) {
   output$fix_box_per_total <- renderPlotly({
     config <- config_table["fix_box_per_total", ]
     y_names <- unique(gsub(".*_", "", plot_data_per_total()$Feature))
-    plot_ly(plot_data_per_total(), x = Value, y = Feature,
+    plot_ly(plot_data_per_total(), x = ~Value, y = ~Feature,
             type = "scatter", mode = "markers", text = plot_data_per_total()[[input$fix_feat]], name = "Points",
             source = "point_fix_box_total") %>%
-      add_trace(data = plot_data_per_total(), x = Value, y = Feature,
+      add_trace(data = plot_data_per_total(), x = ~Value, y = ~Feature,
                 type = "box", orientation = "h", name = "Distribution") %>%
       layout(yaxis = list(title = paste("All", input$fix_feat),
                           tickangle = 25,
@@ -417,8 +417,8 @@ server <- function(input, output) {
   })
   output$fix_scat_rs_rmap <- renderPlotly({
     config <- config_table["fix_scat_rs_rmap", ]
-    plot_ly(data = scat_data(), x = INFO_rs, y = STATS.CSV_ReadsMapped_perc,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_rs, y = ~STATS.CSV_ReadsMapped_perc,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -428,8 +428,8 @@ server <- function(input, output) {
   })
   output$fix_scat_rs_rsl <- renderPlotly({
     config <- config_table["fix_scat_rs_rsl", ]
-    plot_ly(data = scat_data(), x = INFO_rs, y = STATS.CSV_ReadsSpliced_perc,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_rs, y = ~STATS.CSV_ReadsSpliced_perc,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -439,8 +439,8 @@ server <- function(input, output) {
   })
   output$fix_scat_nreads_mem <- renderPlotly({
     config <- config_table["fix_scat_nreads_mem", ]
-    plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_iRAP_Mapping_memory_max,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_nreads, y = ~TIME_iRAP_Mapping_memory_max,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Number of reads",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -450,8 +450,8 @@ server <- function(input, output) {
   })
   output$fix_scat_rs_mem <- renderPlotly({
     config <- config_table["fix_scat_rs_mem", ]
-    plot_ly(data = scat_data(), x = INFO_rs, y = TIME_iRAP_Mapping_memory_max,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_rs, y = ~TIME_iRAP_Mapping_memory_max,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Read Size, bases",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -461,8 +461,8 @@ server <- function(input, output) {
   })
   output$fix_scat_nreads_time <- renderPlotly({
     config <- config_table["fix_scat_nreads_time", ]
-    plot_ly(data = scat_data(), x = INFO_nreads, y = TIME_sum,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_nreads, y = ~TIME_sum,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Number of Reads",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -472,8 +472,8 @@ server <- function(input, output) {
   })
   output$fix_scat_rs_time <- renderPlotly({
     config <- config_table["fix_scat_rs_time", ]
-    plot_ly(data = scat_data(), x = INFO_rs, y = TIME_sum,
-            type = "scatter", mode = "markers", text = Prefix, source = "point_fix_scat") %>%
+    plot_ly(data = scat_data(), x = ~INFO_rs, y = ~TIME_sum,
+            type = "scatter", mode = "markers", text = ~Prefix, source = "point_fix_scat") %>%
       layout(xaxis = list(title = "Read Size",
                           type = config$X_type,
                           range = c(config$X_min, config$X_max)),
@@ -603,23 +603,23 @@ server <- function(input, output) {
     dataset[, c("Prefix", "INFO_rs", "INFO_nreads", "TIME_sum", "STUDY_ID", "ORGANISM"), with = F]
   })
   output$total_box_study_time_sum <- renderPlotly({
-    plot_ly(box_data_time(), x = TIME_sum, y = STUDY_ID,
-            color = STUDY_ID, type = "box", orientation = "h",
+    plot_ly(box_data_time(), x = ~TIME_sum, y = ~STUDY_ID,
+            color = ~STUDY_ID, type = "box", orientation = "h",
             showlegend = F) %>%
       layout(xaxis = list(title = "Time (Summary), min"),
              yaxis = list(title = "Study ID"),
              margin = list(l = 250))
   })
   output$total_box_spic_time_sum <- renderPlotly({
-    plot_ly(box_data_time(), x = TIME_sum, y = ORGANISM,
-            color = ORGANISM, type = "box", orientation = "h") %>%
+    plot_ly(box_data_time(), x = ~TIME_sum, y = ~ORGANISM,
+            color = ~ORGANISM, type = "box", orientation = "h") %>%
       layout(xaxis = list(title = "Time (Summary), min"),
              yaxis = list(title = "ORGANISM"),
              margin = list(l = 250))
   })
   output$total_box_rs_time_sum <- renderPlotly({
-    plot_ly(box_data_time(), x = TIME_sum, y = INFO_rs,
-            color = ORGANISM, type = "box", orientation = "h") %>%
+    plot_ly(box_data_time(), x = ~TIME_sum, y = ~INFO_rs,
+            color = ~ORGANISM, type = "box", orientation = "h") %>%
       layout(xaxis = list(title = "Time (Summary), min"),
              yaxis = list(title = "Read Size, bases"),
              margin = list(l = 250))
@@ -642,23 +642,23 @@ server <- function(input, output) {
     dataset[, c("Prefix", "INFO_rs", "INFO_nreads", "TIME_iRAP_Mapping_memory_max", "STUDY_ID", "ORGANISM"), with = F]
   })
   output$total_box_study_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = STUDY_ID,
-            color = STUDY_ID, type = "box", orientation = "h",
+    plot_ly(box_data_mem(), x = ~TIME_iRAP_Mapping_memory_max, y = ~STUDY_ID,
+            color = ~STUDY_ID, type = "box", orientation = "h",
             showlegend = F) %>%
       layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "Study ID"),
              margin = list(l = 200))
   })
   output$total_box_spic_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = ORGANISM,
-            color = ORGANISM, type = "box", orientation = "h") %>%
+    plot_ly(box_data_mem(), x = ~TIME_iRAP_Mapping_memory_max, y = ~ORGANISM,
+            color = ~ORGANISM, type = "box", orientation = "h") %>%
       layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "ORGANISM"),
              margin = list(l = 250))
   })
   output$total_box_rs_mem <- renderPlotly({
-    plot_ly(box_data_mem(), x = TIME_iRAP_Mapping_memory_max, y = INFO_rs,
-            color = ORGANISM, type = "box", orientation = "h") %>%
+    plot_ly(box_data_mem(), x = ~TIME_iRAP_Mapping_memory_max, y = ~INFO_rs,
+            color = ~ORGANISM, type = "box", orientation = "h") %>%
       layout(xaxis = list(title = "Mapping Memory (max), MB"),
              yaxis = list(title = "Read Size, bases"),
              margin = list(l = 200))
