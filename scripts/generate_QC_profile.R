@@ -118,7 +118,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
     GetVersionData(reads_from_stats[[grep("Pipeline", reads_from_stats)]])
   
   # summing up the data from .genes.raw.tsv
-  genes_raw_pos <- grep("genes.raw", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
+  genes_raw_pos <- grep("genes.raw.htseq", files_paths) - 1 #position of the genes.raw data in the reads_from_stats dataframe
   reads_from_stats[[genes_raw_pos]]$V2 <- 
     sum(reads_from_stats[[genes_raw_pos]]$V2)
   reads_from_stats[[genes_raw_pos]]$V1 <- "GENES.RAW.TSV_sum"
