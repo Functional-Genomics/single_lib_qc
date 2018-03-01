@@ -20,7 +20,7 @@ create_stack_barplot_agg <- function (stats_matrix, feature_type, value_type, st
     color_now = colors[color_tick]
     color_tick <- color_tick + 1
     
-    p <- add_trace(data = group, x = unlist(group[, type, with = F]), y = unlist(group[, 1, with = F]), 
+    p <- add_trace(p, data = group, x = unlist(group[, type, with = F]), y = unlist(group[, 1, with = F]), 
                    type = "bar", orientation = "h", name = gsub("TIME_iRAP_|TIME_", "", type),
                    marker = list(color = color_now), legendgroup = type,
                    evaluate = T) %>%
