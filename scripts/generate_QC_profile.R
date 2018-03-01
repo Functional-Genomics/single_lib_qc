@@ -13,7 +13,7 @@ if (length(args)>3)
 library(dtplyr) # seams dplyr and data.table
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(library64))
+suppressPackageStartupMessages(library(bit64))
 library(stringr)
 
 R_folder_path <<- Sys.getenv("QC_R_DIR")
