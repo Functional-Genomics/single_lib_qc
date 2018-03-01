@@ -43,7 +43,7 @@ if (!is.null(path_to_runs) ) {
 
 # generates QC profile of the given library (takes path to the directory and the library's prefix of character types)
 GenerateQCProfile <- function (path_to_directory, prefix) {
-  
+ 
   # list with the mandatory types of files which contain profiling data 
   types_of_files <- list(info = paste0(prefix, ".*.info$"),
                          fastqc.tsv_1 = paste0(prefix, "(_1\\..*\\.fastqc.tsv$)|), prefix, (\\..*\\.fastqc.tsv$)"),
@@ -51,7 +51,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
                          stats = paste0(prefix, ".*.bam.stats$"),
                          gene.stats = paste0(prefix, ".*.gene.stats$"),
                          stats.csv = paste0(prefix, ".*.stats.csv$"),
-                         genes.raw.csv = paste0(prefix, ".*.genes.raw.*.tsv$"),
+                         genes.raw.csv = paste0(prefix, ".*.genes.raw*.htseq2.tsv$"),
                          time = paste0(prefix,".*.time$"),
                          irap.versions = paste0("irap.versions.tsv")) 
   
@@ -81,7 +81,7 @@ GenerateQCProfile <- function (path_to_directory, prefix) {
   } else {
     amount_of_files <- length(types_of_files) 
   }
-  
+
   # checks for the library's integrity (some files are essential)
   if (length(files_paths) != amount_of_files) {
     cat(prefix, " ", "ERROR! incomplete library: \n")
